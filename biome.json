@@ -4,7 +4,12 @@
     "enabled": true
   },
   "linter": {
-    "enabled": true
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noConsole": "off"
+      }
+    }
   },
   "organizeImports": {
     "enabled": true
