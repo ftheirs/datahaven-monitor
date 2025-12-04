@@ -84,6 +84,26 @@ export const DATAHAVEN_STAGENET_CONFIG: NetworkConfig = {
   },
 };
 
+export type NetworkKind = "testnet" | "stagenet";
+
+/**
+ * Selects which DataHaven network configuration to use based on the DATAHAVEN_NETWORK
+ * environment variable.
+ *
+ * - If DATAHAVEN_NETWORK is "stagenet" (case-insensitive), returns the stagenet config.
+ * - Otherwise, defaults to the testnet config.
+ */
+export function getNetworkConfigFromEnv(): NetworkConfig {
+  const raw = process.env.DATAHAVEN_NETWORK ?? "testnet";
+  const normalized = raw.toLowerCase() as NetworkKind | string;
+
+  if (normalized === "stagenet") {
+    return DATAHAVEN_STAGENET_CONFIG;
+  }
+
+  return DATAHAVEN_TESTNET_CONFIG;
+}
+
 export interface SanityConfig {
   // Example placeholder fields; extend as needed in later phases.
   readonly storageHubTestnetUrl?: string;

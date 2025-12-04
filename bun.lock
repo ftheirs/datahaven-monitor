@@ -6,6 +6,7 @@
       "dependencies": {
         "@storagehub-sdk/core": "0.3.3",
         "@storagehub-sdk/msp-client": "0.3.3",
+        "viem": "2.41.2",
       },
       "devDependencies": {
         "@biomejs/biome": "latest",
