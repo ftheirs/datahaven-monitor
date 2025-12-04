@@ -1,13 +1,13 @@
 ## Testnet Sentinel (datahaven-monitor)
 
-[![Sanity – Full](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-[![Sanity – Connection](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-connection.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-connection.yml)
-[![Sanity – Health](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-health.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-health.yml)
-[![Sanity – SIWE](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-siwe.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-siwe.yml)
-[![Sanity – Upload](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-upload.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-upload.yml)
-[![Sanity – Download](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-download.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-download.yml)
-[![Sanity – Delete](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-delete.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-delete.yml)
-[![Stress – Manual](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml)
+- [![Sanity – Full](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – Connection](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-connection.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-connection.yml)
+- [![Sanity – Health](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-health.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-health.yml)
+- [![Sanity – SIWE](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-siwe.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-siwe.yml)
+- [![Sanity – Upload](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-upload.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-upload.yml)
+- [![Sanity – Download](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-download.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-download.yml)
+- [![Sanity – Delete](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-delete.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-delete.yml)
+- [![Stress – Manual](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml)
 
 Testnet Sentinel runs connection, health, auth, upload/download, and cleanup checks
 against the StorageHub Testnet. Each CI workflow tracks a specific stage so you can
