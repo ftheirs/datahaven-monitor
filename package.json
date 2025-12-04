@@ -9,6 +9,7 @@
 		"sanity": "bun run dist/sanity/index.js",
 		"sanity:dev": "bun run src/sanity/index.ts",
 		"lint": "bunx @biomejs/biome check .",
+		"lint:fix": "bunx @biomejs/biome check . --write",
 		"format": "bunx @biomejs/biome format .",
 		"format:fix": "bunx @biomejs/biome format . --write"
 	},

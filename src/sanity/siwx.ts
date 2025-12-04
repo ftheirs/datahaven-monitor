@@ -1,9 +1,9 @@
 // Sanity test: SIWE-style authentication against the MSP backend.
 // Uses the shared viem wallet client created in the sanity index.
 
+import type { MspClient, Session } from "@storagehub-sdk/msp-client";
 import { logCheckResult } from "../util/logger";
 import type { ViemClients } from "../util/viemClient";
-import type { MspClient, Session } from "@storagehub-sdk/msp-client";
 
 const NAMESPACE = "sanity/siwe";
 const SIWE_DOMAIN = "localhost:8080";

@@ -1,8 +1,8 @@
 // Sanity test: MSP backend health check.
 // Goal: call the backend health endpoint and log per-service status.
 
-import { logCheckResult } from "../util/logger";
 import type { MspClient } from "@storagehub-sdk/msp-client";
+import { logCheckResult } from "../util/logger";
 
 const NAMESPACE = "sanity/healthcheck";
 
@@ -54,9 +54,14 @@ export async function runBackendHealthCheck(
 		if (components && typeof components === "object") {
 			for (const [name, value] of Object.entries(components)) {
 				let serviceStatus: string;
-				if (value && typeof value === "object" && "status" in value) {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					serviceStatus = String((value as any).status);
+				if (
+					value &&
+					typeof value === "object" &&
+					value !== null &&
+					"status" in value
+				) {
+					const component = value as HealthComponent;
+					serviceStatus = component.status ?? "unknown";
 				} else {
 					serviceStatus = String(value);
 				}

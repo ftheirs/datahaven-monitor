@@ -6,12 +6,19 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
+			"style": {
+				"recommended": false
+			},
 			"suspicious": {
 				"noConsole": "off"
 			}
 		}
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": ["**", "!!**/dist"]
+	},
+	"assist": {
+		"enabled": false
 	}
 }

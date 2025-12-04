@@ -3,10 +3,9 @@
 
 import { StorageHubClient } from "@storagehub-sdk/core";
 import { MspClient, type SessionProvider } from "@storagehub-sdk/msp-client";
-
-import type { NetworkConfig } from "./config";
-import type { ViemClients } from "../util/viemClient";
 import { logCheckResult } from "../util/logger";
+import type { ViemClients } from "../util/viemClient";
+import type { NetworkConfig } from "./config";
 
 const NAMESPACE = "sanity/connection";
 

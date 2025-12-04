@@ -6,15 +6,15 @@
 //   4. MSP SIWE auth check
 //   5. Hello-world SDK import check
 
+import type { Session, SessionProvider } from "@storagehub-sdk/msp-client";
+import { logSectionSeparator } from "../util/logger";
+import { createViemClients } from "../util/viemClient";
+import { runBucketCreationCheck, runBucketDeletionCheck } from "./bucket";
 import { getNetworkConfigFromEnv } from "./config";
 import { runConnectionCheck } from "./connection";
 import { runBackendHealthCheck } from "./healthcheck";
-import { runSiweAuthCheck } from "./siwx";
-import { runBucketCreationCheck, runBucketDeletionCheck } from "./bucket";
 import { runHelloWorld } from "./helloWorld";
-import { createViemClients } from "../util/viemClient";
-import { logSectionSeparator } from "../util/logger";
-import type { SessionProvider, Session } from "@storagehub-sdk/msp-client";
+import { runSiweAuthCheck } from "./siwx";
 
 async function main(): Promise<void> {
 	try {
