@@ -3,10 +3,10 @@
 
 import type { StressRunOptions } from "./index";
 
-export async function runDownloadStorm(options: StressRunOptions): Promise<void> {
-  // TODO: implement real download storm stress test.
-  // eslint-disable-next-line no-console
-  console.log("[stress/downloadStorm] Not implemented yet. Options:", options);
+export async function runDownloadStorm(
+	options: StressRunOptions,
+): Promise<void> {
+	// TODO: implement real download storm stress test.
+	// eslint-disable-next-line no-console
+	console.log("[stress/downloadStorm] Not implemented yet. Options:", options);
 }
-
-

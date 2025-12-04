@@ -1,26 +1,25 @@
 {
-  "name": "datahaven-monitor",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Testnet Sentinel: sanity and stress monitoring suite for StorageHub Testnet.",
-  "scripts": {
-    "build": "bunx tsc -p tsconfig.json",
-    "check": "bunx tsc -p tsconfig.json --noEmit",
-    "sanity": "bun run dist/sanity/index.js",
-    "sanity:dev": "bun run src/sanity/index.ts",
-    "lint": "bunx @biomejs/biome check .",
-    "format": "bunx @biomejs/biome format ."
-  },
-  "dependencies": {
-    "@storagehub-sdk/core": "0.3.3",
-    "@storagehub-sdk/msp-client": "0.3.3",
-    "viem": "2.41.2"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "latest",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
-  }
+	"name": "datahaven-monitor",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Testnet Sentinel: sanity and stress monitoring suite for StorageHub Testnet.",
+	"scripts": {
+		"build": "bunx tsc -p tsconfig.json",
+		"check": "bunx tsc -p tsconfig.json --noEmit",
+		"sanity": "bun run dist/sanity/index.js",
+		"sanity:dev": "bun run src/sanity/index.ts",
+		"lint": "bunx @biomejs/biome check .",
+		"format": "bunx @biomejs/biome format .",
+		"format:fix": "bunx @biomejs/biome format . --write"
+	},
+	"dependencies": {
+		"@storagehub-sdk/core": "0.3.3",
+		"@storagehub-sdk/msp-client": "0.3.3",
+		"viem": "2.41.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "latest",
+		"@types/node": "^22.0.0",
+		"typescript": "^5.6.0"
+	}
 }
-
-

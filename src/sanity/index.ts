@@ -17,56 +17,69 @@ import { logSectionSeparator } from "../util/logger";
 import type { SessionProvider, Session } from "@storagehub-sdk/msp-client";
 
 async function main(): Promise<void> {
-  try {
-    // Step 1: create network config + viem clients.
-    const network = getNetworkConfigFromEnv();
-    const viem = createViemClients(network);
+	try {
+		// Step 1: create network config + viem clients.
+		const network = getNetworkConfigFromEnv();
+		const viem = createViemClients(network);
 
-    // Session provider is passed in so that connection/auth tests do not own how
-    // sessions are persisted. We use a simple in-memory implementation for now.
-    let currentSession: Session | undefined;
-    const sessionProvider: SessionProvider = async () => currentSession;
+		// Session provider is passed in so that connection/auth tests do not own how
+		// sessions are persisted. We use a simple in-memory implementation for now.
+		let currentSession: Session | undefined;
+		const sessionProvider: SessionProvider = async () => currentSession;
 
-    // Step 2: ensure we can connect to StorageHub and MSP backends.
-    console.log("[sanity] Running connection check…");
-    const [storageHubClient, mspClient] = await runConnectionCheck(network, viem, sessionProvider);
-    logSectionSeparator("Connection");
+		// Step 2: ensure we can connect to StorageHub and MSP backends.
+		console.log("[sanity] Running connection check…");
+		const [storageHubClient, mspClient] = await runConnectionCheck(
+			network,
+			viem,
+			sessionProvider,
+		);
+		logSectionSeparator("Connection");
 
-    // Step 3: check MSP backend health.
-    console.log("[sanity] Running MSP backend health check…");
-    await runBackendHealthCheck(mspClient);
-    logSectionSeparator("MSP Health");
+		// Step 3: check MSP backend health.
+		console.log("[sanity] Running MSP backend health check…");
+		await runBackendHealthCheck(mspClient);
+		logSectionSeparator("MSP Health");
 
-    // Step 4: perform SIWE-style authentication against the MSP backend.
-    console.log("[sanity] Running MSP SIWE auth check…");
-    const siweSession = await runSiweAuthCheck(mspClient, viem);
-    // Make the authenticated session available through the SessionProvider so
-    // subsequent calls can use authenticated methods.
-    currentSession = siweSession;
-    logSectionSeparator("MSP SIWE");
+		// Step 4: perform SIWE-style authentication against the MSP backend.
+		console.log("[sanity] Running MSP SIWE auth check…");
+		const siweSession = await runSiweAuthCheck(mspClient, viem);
+		// Make the authenticated session available through the SessionProvider so
+		// subsequent calls can use authenticated methods.
+		currentSession = siweSession;
+		logSectionSeparator("MSP SIWE");
 
-    // Step 5: create a bucket via the SDK and verify via MSP.
-    console.log("[sanity] Running bucket creation check…");
-    const [bucketName, bucketId] = await runBucketCreationCheck(storageHubClient, mspClient, viem);
-    // bucketName and bucketId can be reused by subsequent sanity steps when needed.
-    logSectionSeparator("Bucket");
+		// Step 5: create a bucket via the SDK and verify via MSP.
+		console.log("[sanity] Running bucket creation check…");
+		const [bucketName, bucketId] = await runBucketCreationCheck(
+			storageHubClient,
+			mspClient,
+			viem,
+		);
+		// bucketName and bucketId can be reused by subsequent sanity steps when needed.
+		logSectionSeparator("Bucket");
 
-    // Step 6: verify SDK imports / basic behavior.
-    console.log("[sanity] Starting hello-world sanity check…");
-    await runHelloWorld();
-    // eslint-disable-next-line no-console
-    console.log("[sanity] Hello-world sanity check completed successfully.");
-    logSectionSeparator("Hello World");
+		// Step 6: verify SDK imports / basic behavior.
+		console.log("[sanity] Starting hello-world sanity check…");
+		await runHelloWorld();
+		// eslint-disable-next-line no-console
+		console.log("[sanity] Hello-world sanity check completed successfully.");
+		logSectionSeparator("Hello World");
 
-    // Step 7: delete the bucket and verify it is gone.
-    console.log("[sanity] Running bucket deletion check…");
-    await runBucketDeletionCheck(storageHubClient, mspClient, viem, bucketName, bucketId);
-    logSectionSeparator("Bucket Deletion");
-  } catch (error) {
-    console.error("[sanity] Sanity suite failed:", error);
-    process.exitCode = 1;
-  }
+		// Step 7: delete the bucket and verify it is gone.
+		console.log("[sanity] Running bucket deletion check…");
+		await runBucketDeletionCheck(
+			storageHubClient,
+			mspClient,
+			viem,
+			bucketName,
+			bucketId,
+		);
+		logSectionSeparator("Bucket Deletion");
+	} catch (error) {
+		console.error("[sanity] Sanity suite failed:", error);
+		process.exitCode = 1;
+	}
 }
 
 void main();
-

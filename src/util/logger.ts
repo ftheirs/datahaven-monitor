@@ -3,26 +3,35 @@
 
 type LogLevel = "info" | "warn" | "error" | "debug";
 
-function log(level: LogLevel, namespace: string, message: string, ...args: unknown[]): void {
-  const prefix = `[${namespace}]`;
-  // eslint-disable-next-line no-console
-  console[level](`${prefix} ${message}`, ...args);
+function log(
+	level: LogLevel,
+	namespace: string,
+	message: string,
+	...args: unknown[]
+): void {
+	const prefix = `[${namespace}]`;
+	// eslint-disable-next-line no-console
+	console[level](`${prefix} ${message}`, ...args);
 }
 
 export function createLogger(namespace: string) {
-  return {
-    info: (message: string, ...args: unknown[]) => log("info", namespace, message, ...args),
-    warn: (message: string, ...args: unknown[]) => log("warn", namespace, message, ...args),
-    error: (message: string, ...args: unknown[]) => log("error", namespace, message, ...args),
-    debug: (message: string, ...args: unknown[]) => log("debug", namespace, message, ...args),
-  };
+	return {
+		info: (message: string, ...args: unknown[]) =>
+			log("info", namespace, message, ...args),
+		warn: (message: string, ...args: unknown[]) =>
+			log("warn", namespace, message, ...args),
+		error: (message: string, ...args: unknown[]) =>
+			log("error", namespace, message, ...args),
+		debug: (message: string, ...args: unknown[]) =>
+			log("debug", namespace, message, ...args),
+	};
 }
 
 export function formatError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
+	if (error instanceof Error) {
+		return error.message;
+	}
+	return String(error);
 }
 
 /**
@@ -33,20 +42,19 @@ export function formatError(error: unknown): string {
  *   [sanity/connection] MSP connection: [FAIL] - timed out
  */
 export function logCheckResult(
-  namespace: string,
-  label: string,
-  ok: boolean,
-  error?: unknown,
+	namespace: string,
+	label: string,
+	ok: boolean,
+	error?: unknown,
 ): void {
-  const status = ok ? "[OK]" : "[FAIL]";
-  const suffix = ok || error === undefined ? "" : ` - ${formatError(error)}`;
-  // eslint-disable-next-line no-console
-  console.log(`[${namespace}] ${label}: ${status}${suffix}`);
+	const status = ok ? "[OK]" : "[FAIL]";
+	const suffix = ok || error === undefined ? "" : ` - ${formatError(error)}`;
+	// eslint-disable-next-line no-console
+	console.log(`[${namespace}] ${label}: ${status}${suffix}`);
 }
 
 export function logSectionSeparator(label?: string): void {
-  const base = "----------";
-  // eslint-disable-next-line no-console
-  console.log(label ? `${base} ${label} ${base}` : base);
+	const base = "----------";
+	// eslint-disable-next-line no-console
+	console.log(label ? `${base} ${label} ${base}` : base);
 }
-

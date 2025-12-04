@@ -10,16 +10,20 @@ const SIWE_DOMAIN = "localhost:8080";
 const SIWE_URI = "http://localhost:8080";
 
 export async function runSiweAuthCheck(
-  mspClient: MspClient,
-  viem: ViemClients,
+	mspClient: MspClient,
+	viem: ViemClients,
 ): Promise<Session> {
-  const session: Session = await mspClient.auth.SIWE(viem.walletClient, SIWE_DOMAIN, SIWE_URI);
-  const token = session?.token;
-  if (!token || typeof token !== "string" || token.length === 0) {
-    logCheckResult(NAMESPACE, "MSP SIWE auth", false, "Missing or empty token");
-    throw new Error("MSP SIWE auth did not return a usable token.");
-  }
+	const session: Session = await mspClient.auth.SIWE(
+		viem.walletClient,
+		SIWE_DOMAIN,
+		SIWE_URI,
+	);
+	const token = session?.token;
+	if (!token || typeof token !== "string" || token.length === 0) {
+		logCheckResult(NAMESPACE, "MSP SIWE auth", false, "Missing or empty token");
+		throw new Error("MSP SIWE auth did not return a usable token.");
+	}
 
-  logCheckResult(NAMESPACE, "MSP SIWE auth", true);
-  return session;
+	logCheckResult(NAMESPACE, "MSP SIWE auth", true);
+	return session;
 }
