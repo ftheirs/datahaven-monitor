@@ -10,8 +10,8 @@
 		"sanity:dev": "bun run src/sanity/index.ts",
 		"lint": "bunx @biomejs/biome check .",
 		"lint:fix": "bunx @biomejs/biome check . --write",
-		"format": "bunx @biomejs/biome format .",
-		"format:fix": "bunx @biomejs/biome format . --write"
+		"fmt": "bunx @biomejs/biome format .",
+		"fmt:fix": "bunx @biomejs/biome format . --write"
 	},
 	"dependencies": {
 		"@storagehub-sdk/core": "0.3.3",
