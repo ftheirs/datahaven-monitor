@@ -1,7 +1,7 @@
 ## Testnet Sentinel (datahaven-monitor)
 
-[![Sanity – Hello World](https://github.com/<ftheirs>/<datahaven-monitor>/actions/workflows/sanity-cron.yml/badge.svg)](https://github.com/<ftheirs>/<datahaven-monitor>/actions/workflows/sanity-cron.yml)
-[![Stress – Manual](https://github.com/<ftheirs>/<datahaven-monitor>/actions/workflows/manual-stress.yml/badge.svg)](https://github.com/<ftheirs>/<datahaven-monitor>/actions/workflows/manual-stress.yml)
+[![Sanity – Hello World](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml/badge.svg)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+[![Stress – Manual](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml/badge.svg)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml)
 
 Minimal sentinel project for running automated sanity checks and heavier manual
 stress tests against the StorageHub Testnet. Early phases focus on a simple
