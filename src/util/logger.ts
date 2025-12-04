@@ -18,4 +18,35 @@ export function createLogger(namespace: string) {
   };
 }
 
+export function formatError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+/**
+ * Generic, reusable check-result logger.
+ *
+ * Example output:
+ *   [sanity/connection] StorageHub connection: [OK]
+ *   [sanity/connection] MSP connection: [FAIL] - timed out
+ */
+export function logCheckResult(
+  namespace: string,
+  label: string,
+  ok: boolean,
+  error?: unknown,
+): void {
+  const status = ok ? "[OK]" : "[FAIL]";
+  const suffix = ok || error === undefined ? "" : ` - ${formatError(error)}`;
+  // eslint-disable-next-line no-console
+  console.log(`[${namespace}] ${label}: ${status}${suffix}`);
+}
+
+export function logSectionSeparator(label?: string): void {
+  const base = "----------";
+  // eslint-disable-next-line no-console
+  console.log(label ? `${base} ${label} ${base}` : base);
+}
 

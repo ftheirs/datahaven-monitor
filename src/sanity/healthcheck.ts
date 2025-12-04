@@ -1,10 +1,81 @@
-// Sanity test stub: basic network/SDK health checks.
-// Future goal: call a cheap StorageHub endpoint to verify connectivity and basic health.
+// Sanity test: MSP backend health check.
+// Goal: call the backend health endpoint and log per-service status.
 
-export async function runHealthcheck(): Promise<void> {
-  // TODO: implement real healthcheck using sdkClient once available.
-  // eslint-disable-next-line no-console
-  console.log("[sanity/healthcheck] Not implemented yet.");
+import { logCheckResult } from "../util/logger";
+import type { MspClient } from "@storagehub-sdk/msp-client";
+
+const NAMESPACE = "sanity/healthcheck";
+
+// We treat the health response shape loosely here so we don't overfit to the SDK type.
+// Shape based on the current backend response:
+// {
+//   "status": "healthy",
+//   "version": "...",
+//   "service": "...",
+//   "components": {
+//     "storage": { "status": "healthy" },
+//     "postgres": { "status": "healthy" },
+//     "rpc": { "status": "healthy" }
+//   }
+// }
+export interface HealthComponent {
+  readonly status?: string;
 }
 
+export interface HealthResponse {
+  readonly status?: string;
+  readonly components?: Record<string, HealthComponent>;
+  // Kept for forward/backward compatibility if the shape ever uses "services".
+  readonly services?: Record<string, unknown>;
+}
+
+export async function runBackendHealthCheck(mspClient: MspClient): Promise<void> {
+  let overallOk = false;
+  let overallError: unknown;
+
+  try {
+    const health: HealthResponse = await mspClient.info.getHealth();
+
+    const status = health?.status ?? "unknown";
+
+    // Overall status
+    if (status !== "healthy") {
+      throw new Error(`MSP health status is "${status}" (expected "healthy")`);
+    }
+
+    overallOk = true;
+
+    // Optional: per-component/service breakdown.
+    const components: Record<string, unknown> | undefined =
+      health.components ?? health.services;
+
+    if (components && typeof components === "object") {
+      for (const [name, value] of Object.entries(components)) {
+        let serviceStatus: string;
+        if (value && typeof value === "object" && "status" in value) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          serviceStatus = String((value as any).status);
+        } else {
+          serviceStatus = String(value);
+        }
+
+        const serviceOk = serviceStatus === "healthy";
+        logCheckResult(
+          NAMESPACE,
+          `Component ${name}`,
+          serviceOk,
+          serviceOk ? undefined : serviceStatus,
+        );
+      }
+    }
+  } catch (error) {
+    overallError = error;
+  }
+
+  logCheckResult(NAMESPACE, "MSP overall health", overallOk, overallError);
+
+  if (!overallOk) {
+    throw new Error("MSP backend health check failed.");
+  }
+}
 
