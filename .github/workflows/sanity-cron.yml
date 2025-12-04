@@ -26,6 +26,8 @@ jobs:
         run: bun run build
 
       - name: Run sanity hello-world
+        env:
+          ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
         run: bun run sanity
 
       # Notification step temporarily disabled until notify workflow is finalized.
