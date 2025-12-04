@@ -1,0 +1,41 @@
+name: Notify
+
+on:
+  workflow_call:
+    inputs:
+      suite:
+        description: "Test suite that triggered the notification (e.g. sanity, stress)"
+        required: true
+        type: string
+      status:
+        description: "Outcome status (e.g. success, failure)"
+        required: true
+        type: string
+      run_url:
+        description: "URL of the GitHub Actions run"
+        required: false
+        type: string
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log notification details
+        run: |
+          echo "Suite: ${{ inputs.suite }}"
+          echo "Status: ${{ inputs.status }}"
+          echo "Run URL: ${{ inputs.run_url }}"
+
+      # Example Slack notification (template only):
+      # - name: Send Slack notification
+      #   if: env.SLACK_WEBHOOK_URL != ''
+      #   run: |
+      #     payload=$(jq -n \
+      #       --arg text "Suite: ${{ inputs.suite }} | Status: ${{ inputs.status }} | Run: ${{ inputs.run_url }}" \
+      #       '{text: $text}')
+      #     curl -X POST -H 'Content-type: application/json' \
+      #       --data "$payload" "$SLACK_WEBHOOK_URL"
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+

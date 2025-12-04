@@ -1,0 +1,39 @@
+name: Sanity – Hello World
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sanity-hello-world:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Type check & build
+        run: bun run build
+
+      - name: Run sanity hello-world
+        run: bun run sanity
+
+      # Notification step temporarily disabled until notify workflow is finalized.
+      # - name: Notify on failure (template)
+      #   if: failure()
+      #   uses: ./.github/workflows/notify.yml
+      #   with:
+      #     suite: sanity
+      #     status: failure
+
+
