@@ -67,4 +67,39 @@ export async function runBucketCreationCheck(
   return [bucketName, bucketId];
 }
 
+export async function runBucketDeletionCheck(
+  storageHubClient: StorageHubClient,
+  mspClient: MspClient,
+  viem: ViemClients,
+  bucketName: string,
+  bucketId: string,
+): Promise<void> {
+  // 1) Delete the bucket via the StorageHub client.
+  const deleteTxHash = await storageHubClient.deleteBucket(bucketId as `0x${string}`);
+  if (!deleteTxHash) {
+    throw new Error(`Delete bucket "${bucketName}" did not return a transaction hash.`);
+  }
+
+  // 2) Wait for transaction receipt and ensure success.
+  const deleteReceipt = await viem.publicClient.waitForTransactionReceipt({ hash: deleteTxHash });
+  if (deleteReceipt.status !== "success") {
+    throw new Error(`Delete bucket "${bucketName}" transaction failed.`);
+  }
+
+  // TODO: wait until bucket is deleted and no longer displayed in backend
+
+  // 3) Verify via MSP that the bucket is no longer listed.
+  const listedBuckets: Bucket[] = await mspClient.buckets.listBuckets();
+  const expectedBucketId = `0x${bucketId}`;
+  const stillPresent =
+    Array.isArray(listedBuckets)
+    && listedBuckets.some((b) => `0x${b.bucketId}` === expectedBucketId);
+
+  if (stillPresent) {
+    throw new Error(`MSP listBuckets still includes bucket "${bucketName}" after deletion.`);
+  }
+
+  logCheckResult(NAMESPACE, "Bucket deletion", true);
+}
+
 
