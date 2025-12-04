@@ -1,4 +1,4 @@
-name: Sanity – Testnet Sentinel (Full)
+name: Sanity – SIWE
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  sanity-full:
+  sanity-siwe:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,17 +27,8 @@ jobs:
       - name: Type check & build
         run: bun run build
 
-      - name: Run Testnet Sentinel (full)
+      - name: Run SIWE auth check
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
-        run: bun run sanity:full
-
-      # Notification step temporarily disabled until notify workflow is finalized.
-      # - name: Notify on failure (template)
-      #   if: failure()
-      #   uses: ./.github/workflows/notify.yml
-      #   with:
-      #     suite: sanity
-      #     status: failure
-
+        run: bun run sanity:siwe
 

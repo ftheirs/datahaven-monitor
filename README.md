@@ -1,11 +1,17 @@
 ## Testnet Sentinel (datahaven-monitor)
 
-[![Sanity – Hello World](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml/badge.svg)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-[![Stress – Manual](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml/badge.svg)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml)
+[![Sanity – Full](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+[![Sanity – Connection](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-connection.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-connection.yml)
+[![Sanity – Health](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-health.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-health.yml)
+[![Sanity – SIWE](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-siwe.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-siwe.yml)
+[![Sanity – Upload](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-upload.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-upload.yml)
+[![Sanity – Download](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-download.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-download.yml)
+[![Sanity – Delete](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-delete.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-delete.yml)
+[![Stress – Manual](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml)
 
-Minimal sentinel project for running automated sanity checks and heavier manual
-stress tests against the StorageHub Testnet. Early phases focus on a simple
-hello-world sanity script to verify StorageHub SDK imports and CI wiring.
+Testnet Sentinel runs connection, health, auth, upload/download, and cleanup checks
+against the StorageHub Testnet. Each CI workflow tracks a specific stage so you can
+see green checks per part directly in GitHub.
 
 ### Quick start (local)
 
@@ -22,23 +28,30 @@ bun install
 bun run build
 ```
 
-- **Run the sanity hello-world script**:
+- **Run the full sentinel suite**:
 
 ```bash
-bun run sanity
+bun run sanity:full
+```
+
+- **Run a specific stage**:
+
+```bash
+bun run sanity:connection    # connectivity only
+bun run sanity:health        # backend health
+bun run sanity:siwe          # SIWE auth
+bun run sanity:upload        # bucket + uploads
+bun run sanity:download      # upload + download
+bun run sanity:delete        # upload + delete flows
 ```
 
 ### What exists right now
 
 - Bun + TypeScript project scaffolded with Biome configuration.
-- Sanity hello-world entrypoint under `src/sanity` that imports
-  `storagehub-sdk/core` and `storagehub-sdk/msp-client` and prints basic
-  information to the console.
+- Sanity entrypoint under `src/sanity` that exercises StorageHub SDK calls across
+  connection, health, SIWE, upload/download, deletion, and SDK smoke checks.
 - GitHub Actions workflow `sanity-cron.yml` scheduled every 15 minutes to
-  build and run the sanity hello-world script, plus a reusable `notify.yml`
-  template and a placeholder `manual-stress.yml` workflow.
-
-Replace `<ftheirs>` and `<datahaven-monitor>` in the badge URLs above with your GitHub
-namespace to make the status badges live.
-
-
+  build and run the full sentinel suite (currently set to hourly; the 15-minute
+  cron is kept commented for future use), plus per-stage workflows with matching
+  badges, a reusable `notify.yml` template, and a placeholder `manual-stress.yml`
+  workflow.
