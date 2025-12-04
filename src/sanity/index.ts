@@ -10,6 +10,7 @@ import { getNetworkConfigFromEnv } from "./config";
 import { runConnectionCheck } from "./connection";
 import { runBackendHealthCheck } from "./healthcheck";
 import { runSiweAuthCheck } from "./siwx";
+import { runBucketCreationCheck } from "./bucket";
 import { runHelloWorld } from "./helloWorld";
 import { createViemClients } from "../util/viemClient";
 import { logSectionSeparator } from "../util/logger";
@@ -47,7 +48,14 @@ async function main(): Promise<void> {
     currentSession = siweSession;
     logSectionSeparator("MSP SIWE");
 
-    // Step 5: verify SDK imports / basic behavior.
+    // Step 5: create a bucket via the SDK and verify via MSP.
+    // eslint-disable-next-line no-console
+    console.log("[sanity] Running bucket creation check…");
+    const [bucketName, bucketId] = await runBucketCreationCheck(storageHubClient, mspClient, viem);
+    // bucketName and bucketId can be reused by subsequent sanity steps when needed.
+    logSectionSeparator("Bucket");
+
+    // Step 6: verify SDK imports / basic behavior.
     // eslint-disable-next-line no-console
     console.log("[sanity] Starting hello-world sanity check…");
     await runHelloWorld();
