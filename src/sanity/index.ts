@@ -69,6 +69,13 @@ function shouldStopAt(target: SanityTarget, checkpoint: SanityTarget): boolean {
   return target === checkpoint;
 }
 
+function assertPresent<T>(value: T | undefined, name: string): T {
+  if (value === undefined) {
+    throw new Error(`${name} is not initialized`);
+  }
+  return value;
+}
+
 async function writeStatusFile(
   statusFilePath: string,
   stageStatuses: Record<Stage, StageStatus>,
@@ -184,7 +191,8 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
     await runStage("health", async () => {
       // Check MSP backend health.
       console.log("[sanity] Running MSP backend health check…");
-      await runBackendHealthCheck(mspClient);
+      const msp = assertPresent(mspClient, "mspClient");
+      await runBackendHealthCheck(msp);
       logSectionSeparator("MSP Health");
     });
 
@@ -195,7 +203,8 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
     await runStage("siwe", async () => {
       // Perform SIWE-style authentication against the MSP backend.
       console.log("[sanity] Running MSP SIWE auth check…");
-      const siweSession = await runSiweAuthCheck(mspClient, viem);
+      const msp = assertPresent(mspClient, "mspClient");
+      const siweSession = await runSiweAuthCheck(msp, viem);
       // Make the authenticated session available through the SessionProvider so
       // subsequent calls can use authenticated methods.
       currentSession = siweSession;
@@ -209,15 +218,17 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
     await runStage("upload", async () => {
       // Create a bucket via the SDK and verify via MSP.
       console.log("[sanity] Running bucket creation check…");
+      const sh = assertPresent(storageHubClient, "storageHubClient");
+      const msp = assertPresent(mspClient, "mspClient");
       [bucketName, bucketId] = await runBucketCreationCheck(
-        storageHubClient,
-        mspClient,
+        sh,
+        msp,
         viem,
       );
       logSectionSeparator("Bucket");
 
       // Resolve MSP ID for subsequent storage requests.
-      const valueProps = await mspClient.info.getValuePropositions();
+      const valueProps = await msp.info.getValuePropositions();
       if (!Array.isArray(valueProps) || valueProps.length === 0) {
         throw new Error("No value propositions available to determine MSP ID.");
       }
@@ -233,9 +244,9 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
       );
       const adolphusLocation = generateFileLocation("adolphus.jpg");
       const adolphusResult = await runIssueStorageRequest(
-        storageHubClient,
+        sh,
         viem,
-        bucketId,
+        assertPresent(bucketId, "bucketId"),
         adolphusBlob,
         adolphusLocation,
         mspId,
@@ -245,8 +256,8 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
       adolphusFileKey = adolphusResult.fileKey;
       adolphusFileBlob = adolphusResult.fileBlob;
       await runFileUploadCheck(
-        mspClient,
-        bucketId,
+        msp,
+        assertPresent(bucketId, "bucketId"),
         viem.account.address,
         adolphusBlob,
         adolphusLocation,
@@ -259,9 +270,9 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
       const randomFile = createRandomBinaryFile(5 * 1024 * 1024);
       const randomLocation = generateFileLocation("random-5mb.bin");
       const randomResult = await runIssueStorageRequest(
-        storageHubClient,
+        sh,
         viem,
-        bucketId,
+        assertPresent(bucketId, "bucketId"),
         randomFile,
         randomLocation,
         mspId,
@@ -271,8 +282,8 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
       randomFileKey = randomResult.fileKey;
       randomFileBlob = randomResult.fileBlob;
       await runFileUploadCheck(
-        mspClient,
-        bucketId,
+        msp,
+        assertPresent(bucketId, "bucketId"),
         viem.account.address,
         randomFile,
         randomLocation,
@@ -292,7 +303,7 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
         throw new Error("Missing adolphus upload artifacts for download check.");
       }
       console.log("[sanity] Running adolphus.jpg download check…");
-      await runFileDownloadCheck(mspClient, adolphusFileKey, adolphusFileBlob);
+      await runFileDownloadCheck(assertPresent(mspClient, "mspClient"), adolphusFileKey, adolphusFileBlob);
       logSectionSeparator("Adolphus.jpg Download");
 
       // Download the random binary file and verify content.
@@ -300,7 +311,7 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
         throw new Error("Missing random file artifacts for download check.");
       }
       console.log("[sanity] Running random binary file download check…");
-      await runFileDownloadCheck(mspClient, randomFileKey, randomFileBlob);
+      await runFileDownloadCheck(assertPresent(mspClient, "mspClient"), randomFileKey, randomFileBlob);
       logSectionSeparator("Random Binary Download");
     });
 
@@ -313,33 +324,33 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
       // Delete adolphus.jpg and verify it's removed.
       console.log("[sanity] Running adolphus.jpg deletion check…");
       await runFileDeletionCheck(
-        storageHubClient,
-        mspClient,
+        assertPresent(storageHubClient, "storageHubClient"),
+        assertPresent(mspClient, "mspClient"),
         viem,
-        bucketId,
-        adolphusFileKey,
+        assertPresent(bucketId, "bucketId"),
+        assertPresent(adolphusFileKey, "adolphusFileKey"),
       );
       logSectionSeparator("Adolphus.jpg Deletion");
 
       // Delete the random binary file and verify it's removed.
       console.log("[sanity] Running random binary file deletion check…");
       await runFileDeletionCheck(
-        storageHubClient,
-        mspClient,
+        assertPresent(storageHubClient, "storageHubClient"),
+        assertPresent(mspClient, "mspClient"),
         viem,
-        bucketId,
-        randomFileKey,
+        assertPresent(bucketId, "bucketId"),
+        assertPresent(randomFileKey, "randomFileKey"),
       );
       logSectionSeparator("Random Binary Deletion");
     });
 
     if (shouldStopAt(target, "delete")) {
       await runBucketDeletionCheck(
-        storageHubClient,
-        mspClient,
+        assertPresent(storageHubClient, "storageHubClient"),
+        assertPresent(mspClient, "mspClient"),
         viem,
-        bucketName,
-        bucketId,
+        assertPresent(bucketName, "bucketName"),
+        assertPresent(bucketId, "bucketId"),
       );
       logSectionSeparator("Bucket Deletion");
       return;
@@ -356,11 +367,11 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
     // Delete the bucket and verify it is gone.
     console.log("[sanity] Running bucket deletion check…");
     await runBucketDeletionCheck(
-      storageHubClient,
-      mspClient,
+      assertPresent(storageHubClient, "storageHubClient"),
+      assertPresent(mspClient, "mspClient"),
       viem,
-      bucketName,
-      bucketId,
+      assertPresent(bucketName, "bucketName"),
+      assertPresent(bucketId, "bucketId"),
     );
     logSectionSeparator("Bucket Deletion");
   } catch (error) {
