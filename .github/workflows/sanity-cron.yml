@@ -1,5 +1,8 @@
 name: Sanity – Testnet Sentinel (Full)
 
+permissions:
+  contents: write
+
 on:
   schedule:
     # Run every 15 minutes (keep commented for now)
@@ -30,7 +33,77 @@ jobs:
       - name: Run Testnet Sentinel (full)
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
+          SANITY_STATUS_FILE: badges/status.json
         run: bun run sanity:full
+        continue-on-error: true
+
+      - name: Generate Shields endpoint badges
+        if: always()
+        run: |
+          node - <<'EOF'
+          const fs = require("fs");
+          const path = require("path");
+
+          const statusPath = path.join("badges", "status.json");
+          if (!fs.existsSync(statusPath)) {
+            console.error(`Status file not found at ${statusPath}`);
+            process.exit(1);
+          }
+
+          const data = JSON.parse(fs.readFileSync(statusPath, "utf8"));
+          const colorMap = {
+            passed: "brightgreen",
+            failed: "red",
+            skipped: "lightgrey",
+          };
+          const labels = {
+            connection: "Connection",
+            health: "Health",
+            siwe: "SIWE",
+            upload: "Upload",
+            download: "Download",
+            delete: "Delete",
+            sdk: "SDK",
+          };
+
+          fs.mkdirSync("badges", { recursive: true });
+          for (const [stage, status] of Object.entries(data.stages ?? {})) {
+            const label = labels[stage] ?? stage;
+            const message = status ?? "skipped";
+            const color = colorMap[message] ?? "lightgrey";
+            const payload = {
+              schemaVersion: 1,
+              label: `Sanity – ${label}`,
+              message,
+              color,
+              cacheSeconds: 300,
+            };
+            const target = path.join("badges", `${stage}.json`);
+            fs.writeFileSync(target, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+            console.log(`Wrote ${target}`);
+          }
+          EOF
+
+      - name: Publish badge endpoints to gh-pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: badges
+          keep_files: true
+
+      - name: Fail if any stage failed
+        if: always()
+        run: |
+          node - <<'EOF'
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("badges/status.json", "utf8"));
+          const statuses = Object.values(data.stages ?? {});
+          if (statuses.includes("failed")) {
+            console.error("At least one stage failed.");
+            process.exit(1);
+          }
+          EOF
 
       # Notification step temporarily disabled until notify workflow is finalized.
       # - name: Notify on failure (template)

@@ -2,6 +2,8 @@
 // Flow is parameterized so CI workflows can stop at a specific checkpoint while
 // still reusing the same underlying steps.
 
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import type { Session, SessionProvider } from "@storagehub-sdk/msp-client";
 import { logSectionSeparator } from "../util/logger";
 import { createViemClients } from "../util/viemClient";
@@ -21,6 +23,17 @@ import { runBackendHealthCheck } from "./healthcheck";
 import { runHelloWorld } from "./helloWorld";
 import { runSiweAuthCheck } from "./siwx";
 
+type Stage =
+  | "connection"
+  | "health"
+  | "siwe"
+  | "upload"
+  | "download"
+  | "delete"
+  | "sdk";
+
+type StageStatus = "passed" | "failed" | "skipped";
+
 const SANITY_TARGETS = [
   "connection",
   "health",
@@ -33,6 +46,16 @@ const SANITY_TARGETS = [
 
 export type SanityTarget = (typeof SANITY_TARGETS)[number];
 
+const STAGE_LABELS: Record<Stage, string> = {
+  connection: "Connection",
+  health: "Health",
+  siwe: "SIWE",
+  upload: "Upload",
+  download: "Download",
+  delete: "Delete",
+  sdk: "SDK",
+};
+
 function resolveTarget(): SanityTarget {
   const input = (process.env.SANITY_TARGET ?? process.argv[2] ?? "full").toLowerCase();
   if (SANITY_TARGETS.includes(input as SanityTarget)) {
@@ -44,6 +67,18 @@ function resolveTarget(): SanityTarget {
 
 function shouldStopAt(target: SanityTarget, checkpoint: SanityTarget): boolean {
   return target === checkpoint;
+}
+
+async function writeStatusFile(
+  statusFilePath: string,
+  stageStatuses: Record<Stage, StageStatus>,
+): Promise<void> {
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    stages: stageStatuses,
+  };
+  await mkdir(dirname(statusFilePath), { recursive: true });
+  await writeFile(statusFilePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 }
 
 export async function runSanitySuite(target: SanityTarget = "full"): Promise<void> {
@@ -64,6 +99,27 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
   let randomFileKey: `0x${string}` | undefined;
   let adolphusFileBlob: Blob | undefined;
   let randomFileBlob: Blob | undefined;
+
+  const stageStatuses: Record<Stage, StageStatus> = {
+    connection: "skipped",
+    health: "skipped",
+    siwe: "skipped",
+    upload: "skipped",
+    download: "skipped",
+    delete: "skipped",
+    sdk: "skipped",
+  };
+  const statusFile = process.env.SANITY_STATUS_FILE ?? "sanity-status.json";
+
+  async function runStage(stage: Stage, fn: () => Promise<void>): Promise<void> {
+    try {
+      await fn();
+      stageStatuses[stage] = "passed";
+    } catch (error) {
+      stageStatuses[stage] = "failed";
+      throw error;
+    }
+  }
 
   async function cleanup(label: string): Promise<void> {
     if (!storageHubClient || !mspClient || !bucketId || !bucketName) {
@@ -114,152 +170,168 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
   try {
     console.log(`[sanity] Running Testnet Sentinel with target="${target}"…`);
 
-    // Ensure we can connect to StorageHub and MSP backends.
-    console.log("[sanity] Running connection check…");
-    [storageHubClient, mspClient] = await runConnectionCheck(network, viem, sessionProvider);
-    logSectionSeparator("Connection");
+    await runStage("connection", async () => {
+      // Ensure we can connect to StorageHub and MSP backends.
+      console.log("[sanity] Running connection check…");
+      [storageHubClient, mspClient] = await runConnectionCheck(network, viem, sessionProvider);
+      logSectionSeparator("Connection");
+    });
 
     if (shouldStopAt(target, "connection")) {
       return;
     }
 
-    // Check MSP backend health.
-    console.log("[sanity] Running MSP backend health check…");
-    await runBackendHealthCheck(mspClient);
-    logSectionSeparator("MSP Health");
+    await runStage("health", async () => {
+      // Check MSP backend health.
+      console.log("[sanity] Running MSP backend health check…");
+      await runBackendHealthCheck(mspClient);
+      logSectionSeparator("MSP Health");
+    });
 
     if (shouldStopAt(target, "health")) {
       return;
     }
 
-    // Perform SIWE-style authentication against the MSP backend.
-    console.log("[sanity] Running MSP SIWE auth check…");
-    const siweSession = await runSiweAuthCheck(mspClient, viem);
-    // Make the authenticated session available through the SessionProvider so
-    // subsequent calls can use authenticated methods.
-    currentSession = siweSession;
-    logSectionSeparator("MSP SIWE");
+    await runStage("siwe", async () => {
+      // Perform SIWE-style authentication against the MSP backend.
+      console.log("[sanity] Running MSP SIWE auth check…");
+      const siweSession = await runSiweAuthCheck(mspClient, viem);
+      // Make the authenticated session available through the SessionProvider so
+      // subsequent calls can use authenticated methods.
+      currentSession = siweSession;
+      logSectionSeparator("MSP SIWE");
+    });
 
     if (shouldStopAt(target, "siwe")) {
       return;
     }
 
-    // Create a bucket via the SDK and verify via MSP.
-    console.log("[sanity] Running bucket creation check…");
-    [bucketName, bucketId] = await runBucketCreationCheck(storageHubClient, mspClient, viem);
-    logSectionSeparator("Bucket");
+    await runStage("upload", async () => {
+      // Create a bucket via the SDK and verify via MSP.
+      console.log("[sanity] Running bucket creation check…");
+      [bucketName, bucketId] = await runBucketCreationCheck(
+        storageHubClient,
+        mspClient,
+        viem,
+      );
+      logSectionSeparator("Bucket");
 
-    // Resolve MSP ID for subsequent storage requests.
-    const valueProps = await mspClient.info.getValuePropositions();
-    if (!Array.isArray(valueProps) || valueProps.length === 0) {
-      throw new Error("No value propositions available to determine MSP ID.");
-    }
-    const selectedVp = valueProps[0];
-    const mspId =
-      (("mspId" in selectedVp && selectedVp.mspId) || selectedVp.id) as `0x${string}`;
+      // Resolve MSP ID for subsequent storage requests.
+      const valueProps = await mspClient.info.getValuePropositions();
+      if (!Array.isArray(valueProps) || valueProps.length === 0) {
+        throw new Error("No value propositions available to determine MSP ID.");
+      }
+      const selectedVp = valueProps[0];
+      const mspId =
+        (("mspId" in selectedVp && selectedVp.mspId) || selectedVp.id) as `0x${string}`;
 
-    // Issue storage request + upload adolphus.jpg (from resources).
-    console.log("[sanity] Running adolphus.jpg storage request + upload…");
-    const adolphusBlob = await loadLocalFileBlob(
-      "../../resources/adolphus.jpg",
-      "image/jpeg",
-    );
-    const adolphusLocation = generateFileLocation("adolphus.jpg");
-    const adolphusResult = await runIssueStorageRequest(
-      storageHubClient,
-      viem,
-      bucketId,
-      adolphusBlob,
-      adolphusLocation,
-      mspId,
-      network.defaults.replicationLevel,
-      network.defaults.replicas,
-    );
-    adolphusFileKey = adolphusResult.fileKey;
-    adolphusFileBlob = adolphusResult.fileBlob;
-    await runFileUploadCheck(
-      mspClient,
-      bucketId,
-      viem.account.address,
-      adolphusBlob,
-      adolphusLocation,
-      adolphusFileKey,
-    );
-    logSectionSeparator("Adolphus.jpg Upload");
+      // Issue storage request + upload adolphus.jpg (from resources).
+      console.log("[sanity] Running adolphus.jpg storage request + upload…");
+      const adolphusBlob = await loadLocalFileBlob(
+        "../../resources/adolphus.jpg",
+        "image/jpeg",
+      );
+      const adolphusLocation = generateFileLocation("adolphus.jpg");
+      const adolphusResult = await runIssueStorageRequest(
+        storageHubClient,
+        viem,
+        bucketId,
+        adolphusBlob,
+        adolphusLocation,
+        mspId,
+        network.defaults.replicationLevel,
+        network.defaults.replicas,
+      );
+      adolphusFileKey = adolphusResult.fileKey;
+      adolphusFileBlob = adolphusResult.fileBlob;
+      await runFileUploadCheck(
+        mspClient,
+        bucketId,
+        viem.account.address,
+        adolphusBlob,
+        adolphusLocation,
+        adolphusFileKey,
+      );
+      logSectionSeparator("Adolphus.jpg Upload");
 
-    // Issue storage request + upload a random 5MB binary file.
-    console.log("[sanity] Running random 5MB storage request + upload…");
-    const randomFile = createRandomBinaryFile(5 * 1024 * 1024);
-    const randomLocation = generateFileLocation("random-5mb.bin");
-    const randomResult = await runIssueStorageRequest(
-      storageHubClient,
-      viem,
-      bucketId,
-      randomFile,
-      randomLocation,
-      mspId,
-      network.defaults.replicationLevel,
-      network.defaults.replicas,
-    );
-    randomFileKey = randomResult.fileKey;
-    randomFileBlob = randomResult.fileBlob;
-    await runFileUploadCheck(
-      mspClient,
-      bucketId,
-      viem.account.address,
-      randomFile,
-      randomLocation,
-      randomFileKey,
-    );
-    logSectionSeparator("Random 5MB Upload");
+      // Issue storage request + upload a random 5MB binary file.
+      console.log("[sanity] Running random 5MB storage request + upload…");
+      const randomFile = createRandomBinaryFile(5 * 1024 * 1024);
+      const randomLocation = generateFileLocation("random-5mb.bin");
+      const randomResult = await runIssueStorageRequest(
+        storageHubClient,
+        viem,
+        bucketId,
+        randomFile,
+        randomLocation,
+        mspId,
+        network.defaults.replicationLevel,
+        network.defaults.replicas,
+      );
+      randomFileKey = randomResult.fileKey;
+      randomFileBlob = randomResult.fileBlob;
+      await runFileUploadCheck(
+        mspClient,
+        bucketId,
+        viem.account.address,
+        randomFile,
+        randomLocation,
+        randomFileKey,
+      );
+      logSectionSeparator("Random 5MB Upload");
+    });
 
     if (shouldStopAt(target, "upload")) {
       await cleanup("upload");
       return;
     }
 
-    // Download adolphus.jpg and verify content.
-    if (!adolphusFileKey || !adolphusFileBlob) {
-      throw new Error("Missing adolphus upload artifacts for download check.");
-    }
-    console.log("[sanity] Running adolphus.jpg download check…");
-    await runFileDownloadCheck(mspClient, adolphusFileKey, adolphusFileBlob);
-    logSectionSeparator("Adolphus.jpg Download");
+    await runStage("download", async () => {
+      // Download adolphus.jpg and verify content.
+      if (!adolphusFileKey || !adolphusFileBlob) {
+        throw new Error("Missing adolphus upload artifacts for download check.");
+      }
+      console.log("[sanity] Running adolphus.jpg download check…");
+      await runFileDownloadCheck(mspClient, adolphusFileKey, adolphusFileBlob);
+      logSectionSeparator("Adolphus.jpg Download");
 
-    // Download the random binary file and verify content.
-    if (!randomFileKey || !randomFileBlob) {
-      throw new Error("Missing random file artifacts for download check.");
-    }
-    console.log("[sanity] Running random binary file download check…");
-    await runFileDownloadCheck(mspClient, randomFileKey, randomFileBlob);
-    logSectionSeparator("Random Binary Download");
+      // Download the random binary file and verify content.
+      if (!randomFileKey || !randomFileBlob) {
+        throw new Error("Missing random file artifacts for download check.");
+      }
+      console.log("[sanity] Running random binary file download check…");
+      await runFileDownloadCheck(mspClient, randomFileKey, randomFileBlob);
+      logSectionSeparator("Random Binary Download");
+    });
 
     if (shouldStopAt(target, "download")) {
       await cleanup("download");
       return;
     }
 
-    // Delete adolphus.jpg and verify it's removed.
-    console.log("[sanity] Running adolphus.jpg deletion check…");
-    await runFileDeletionCheck(
-      storageHubClient,
-      mspClient,
-      viem,
-      bucketId,
-      adolphusFileKey,
-    );
-    logSectionSeparator("Adolphus.jpg Deletion");
+    await runStage("delete", async () => {
+      // Delete adolphus.jpg and verify it's removed.
+      console.log("[sanity] Running adolphus.jpg deletion check…");
+      await runFileDeletionCheck(
+        storageHubClient,
+        mspClient,
+        viem,
+        bucketId,
+        adolphusFileKey,
+      );
+      logSectionSeparator("Adolphus.jpg Deletion");
 
-    // Delete the random binary file and verify it's removed.
-    console.log("[sanity] Running random binary file deletion check…");
-    await runFileDeletionCheck(
-      storageHubClient,
-      mspClient,
-      viem,
-      bucketId,
-      randomFileKey,
-    );
-    logSectionSeparator("Random Binary Deletion");
+      // Delete the random binary file and verify it's removed.
+      console.log("[sanity] Running random binary file deletion check…");
+      await runFileDeletionCheck(
+        storageHubClient,
+        mspClient,
+        viem,
+        bucketId,
+        randomFileKey,
+      );
+      logSectionSeparator("Random Binary Deletion");
+    });
 
     if (shouldStopAt(target, "delete")) {
       await runBucketDeletionCheck(
@@ -273,11 +345,13 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
       return;
     }
 
-    // Verify SDK imports / basic behavior.
-    console.log("[sanity] Starting SDK smoke check…");
-    await runHelloWorld();
-    console.log("[sanity] SDK smoke check completed successfully.");
-    logSectionSeparator("SDK Smoke");
+    await runStage("sdk", async () => {
+      // Verify SDK imports / basic behavior.
+      console.log("[sanity] Starting SDK smoke check…");
+      await runHelloWorld();
+      console.log("[sanity] SDK smoke check completed successfully.");
+      logSectionSeparator("SDK Smoke");
+    });
 
     // Delete the bucket and verify it is gone.
     console.log("[sanity] Running bucket deletion check…");
@@ -293,6 +367,12 @@ export async function runSanitySuite(target: SanityTarget = "full"): Promise<voi
     console.error("[sanity] Sanity suite failed:", error);
     await cleanup("failure");
     process.exitCode = 1;
+  } finally {
+    try {
+      await writeStatusFile(statusFile, stageStatuses);
+    } catch (writeError) {
+      console.error("[sanity] Failed to write status file:", writeError);
+    }
   }
 }
 
