@@ -1,12 +1,12 @@
 ## Testnet Sentinel (datahaven-monitor)
 
-- [![Sanity – Connection](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/badges/connection.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Health](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/badges/health.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – SIWE](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/badges/siwe.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Upload](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/badges/upload.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Download](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/badges/download.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Delete](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/badges/delete.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – SDK](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/badges/sdk.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – Connection](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/connection.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – Health](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/health.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – SIWE](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/siwe.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – Upload](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/upload.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – Download](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/download.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – Delete](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/delete.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – SDK](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/sdk.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
 - [![Stress – Manual](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml)
 
 Testnet Sentinel runs connection, health, auth, upload/download, and cleanup checks
