@@ -30,15 +30,17 @@ async function uploadWithRetry(
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
 
-      // If MSP says "not expecting file key" or returns 400, wait and retry
+      // If MSP says "not expecting file key", returns 400, or times out, wait and retry
       if (
         errorMsg.includes("not expecting") ||
         errorMsg.includes("400") ||
-        errorMsg.includes("HTTP 400")
+        errorMsg.includes("HTTP 400") ||
+        errorMsg.includes("timed out") ||
+        errorMsg.includes("timeout")
       ) {
         if (i < retries - 1) {
           console.log(
-            `[file-upload] MSP not ready yet, retrying in ${delayMs / 1000}s... (attempt ${i + 1}/${retries})`,
+            `[file-upload] MSP not ready/slow, retrying in ${delayMs / 1000}s... (attempt ${i + 1}/${retries})`,
           );
           await sleep(delayMs);
           continue;

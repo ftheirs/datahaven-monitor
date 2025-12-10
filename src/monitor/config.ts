@@ -37,7 +37,7 @@ export const STAGENET_CONFIG: NetworkConfig = {
   },
   msp: {
     baseUrl: "https://deo-dh-backend.stagenet.datahaven-infra.network",
-    timeoutMs: 30_000,
+    timeoutMs: 60_000, // 60s for file uploads (stagenet can be slow)
     siweDomain: "deo-dh-backend.stagenet.datahaven-infra.network",
     siweUri: "https://deo-dh-backend.stagenet.datahaven-infra.network",
   },

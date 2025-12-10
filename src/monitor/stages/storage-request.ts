@@ -43,8 +43,8 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 	console.log(`[storage-request] Fingerprint: ${ctx.fingerprint}`);
 	console.log(`[storage-request] Size: ${ctx.fileSize} bytes`);
 
-	// Generate file location
-	ctx.fileLocation = `/monitor/${Date.now()}/adolphus.jpg`;
+	// Generate file location (simple filename like demo)
+	ctx.fileLocation = "adolphus.jpg";
 	console.log(`[storage-request] Location: ${ctx.fileLocation}`);
 
 	// Get MSP peer ID if available
@@ -109,6 +109,12 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 	if ((storageRequest as any).isNone) {
 		throw new Error("Storage request not found on-chain");
 	}
+
+	// Wait for MSP to process the storage request (critical for upload readiness)
+	console.log(
+		`[storage-request] Waiting for MSP to process (${ctx.network.delays.postStorageRequestMs / 1000}s)...`,
+	);
+	await new Promise((r) => setTimeout(r, ctx.network.delays.postStorageRequestMs));
 
 	console.log("[storage-request] ✓ Storage request issued and verified");
 }
