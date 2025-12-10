@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "Health",
+  "label": "Storage Request",
   "message": "passed",
   "color": "brightgreen",
   "cacheSeconds": 300

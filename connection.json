@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "Sanity – Connection",
+  "label": "Connection",
   "message": "passed",
   "color": "brightgreen",
   "cacheSeconds": 300

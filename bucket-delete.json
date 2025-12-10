@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "Health",
+  "label": "Bucket Delete",
   "message": "passed",
   "color": "brightgreen",
   "cacheSeconds": 300
