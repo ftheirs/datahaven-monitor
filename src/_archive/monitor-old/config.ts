@@ -6,23 +6,22 @@ export type NetworkConfig = {
     id: number;
     name: string;
     evmRpcUrl: string;
-    substrateWsUrl: `wss://${string}`;
+    substrateWsUrl: string;
     filesystemPrecompileAddress: `0x${string}`;
   };
   msp: {
     baseUrl: string;
     timeoutMs: number;
-    siweDomain: string;
-    siweUri: string;
   };
   test: {
     testFilePath: string;
+    bucketName: string;
   };
-  delays: {
-    postStorageRequestMs: number;
-    beforeUploadMs: number;
-    postFileDeletionMs: number;
-    postBucketDeletionMs: number;
+  indexing: {
+    blocksToWait: number;
+    extraDelayMs: number;
+    uploadRetries: number;
+    uploadRetryDelayMs: number;
   };
 };
 
@@ -37,18 +36,17 @@ export const STAGENET_CONFIG: NetworkConfig = {
   },
   msp: {
     baseUrl: "https://deo-dh-backend.stagenet.datahaven-infra.network",
-    timeoutMs: 30_000,
-    siweDomain: "deo-dh-backend.stagenet.datahaven-infra.network",
-    siweUri: "https://deo-dh-backend.stagenet.datahaven-infra.network",
+    timeoutMs: 30000,
   },
   test: {
     testFilePath: "./resources/adolphus.jpg",
+    bucketName: "monitor-test-bucket",
   },
-  delays: {
-    postStorageRequestMs: 10_000,
-    beforeUploadMs: 15_000,
-    postFileDeletionMs: 10_000,
-    postBucketDeletionMs: 5_000,
+  indexing: {
+    blocksToWait: 8,
+    extraDelayMs: 15000,
+    uploadRetries: 3,
+    uploadRetryDelayMs: 10000,
   },
 };
 
@@ -63,18 +61,17 @@ export const TESTNET_CONFIG: NetworkConfig = {
   },
   msp: {
     baseUrl: "https://deo-dh-backend.testnet.datahaven-infra.network",
-    timeoutMs: 30_000,
-    siweDomain: "deo-dh-backend.testnet.datahaven-infra.network",
-    siweUri: "https://deo-dh-backend.testnet.datahaven-infra.network",
+    timeoutMs: 30000,
   },
   test: {
     testFilePath: "./resources/adolphus.jpg",
+    bucketName: "monitor-test-bucket",
   },
-  delays: {
-    postStorageRequestMs: 10_000,
-    beforeUploadMs: 15_000,
-    postFileDeletionMs: 10_000,
-    postBucketDeletionMs: 5_000,
+  indexing: {
+    blocksToWait: 6,
+    extraDelayMs: 10000,
+    uploadRetries: 3,
+    uploadRetryDelayMs: 10000,
   },
 };
 

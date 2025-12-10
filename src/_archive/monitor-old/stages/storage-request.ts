@@ -2,8 +2,8 @@
 
 import { readFile } from "node:fs/promises";
 import { TypeRegistry } from "@polkadot/types";
-import { FileManager, ReplicationLevel, initWasm } from "@storagehub-sdk/core";
-import type { FileManager as FM } from "@storagehub-sdk/core";
+import type { AccountId20, H256 } from "@polkadot/types/interfaces";
+import { FileManager, ReplicationLevel } from "@storagehub-sdk/core";
 import { waitForFinalization } from "../utils/waits";
 import type { MonitorContext } from "../types";
 
@@ -20,9 +20,6 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 	) {
 		throw new Error("Required context not initialized");
 	}
-
-	// Initialize WASM (if not already done)
-	await initWasm();
 
 	// Load test file
 	console.log("[storage-request] Loading test file...");
@@ -44,12 +41,8 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 	console.log(`[storage-request] Size: ${ctx.fileSize} bytes`);
 
 	// Generate file location
-	ctx.fileLocation = `/monitor/${Date.now()}/adolphus.jpg`;
+	ctx.fileLocation = "/monitor/adolphus.jpg";
 	console.log(`[storage-request] Location: ${ctx.fileLocation}`);
-
-	// Get MSP peer ID if available
-	const mspInfo = await ctx.mspClient.info.getInfo();
-	const peerId = extractPeerId(mspInfo.multiaddresses);
 
 	// Issue storage request
 	console.log("[storage-request] Issuing storage request on-chain...");
@@ -59,9 +52,9 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 		ctx.fingerprint as `0x${string}`,
 		ctx.fileSize,
 		ctx.mspId as `0x${string}`,
-		peerId ? [peerId] : [],
+		[], // peerIds - let MSP distribute
 		ReplicationLevel.Basic,
-		0,
+		0, // replicas - only used for Custom replication
 	);
 	if (!txHash) {
 		throw new Error("issueStorageRequest did not return a transaction hash");
@@ -83,19 +76,11 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 	// Compute file key
 	console.log("[storage-request] Computing file key...");
 	const registry = new TypeRegistry();
-	type FileManagerOwner = Parameters<FM["computeFileKey"]>[0];
-	type FileManagerBucket = Parameters<FM["computeFileKey"]>[1];
-	const owner = registry.createType(
-		"AccountId20",
-		ctx.account.address,
-	) as unknown as FileManagerOwner;
-	const bucketIdH256 = registry.createType(
-		"H256",
-		ctx.bucketId,
-	) as unknown as FileManagerBucket;
+	const owner = registry.createType("AccountId20", ctx.account.address);
+	const bucketIdH256 = registry.createType("H256", ctx.bucketId);
 	const fileKeyH256 = await fileManager.computeFileKey(
-		owner,
-		bucketIdH256,
+		owner as any,
+		bucketIdH256 as any,
 		ctx.fileLocation,
 	);
 	ctx.fileKey = fileKeyH256.toHex();
@@ -110,14 +95,21 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 		throw new Error("Storage request not found on-chain");
 	}
 
+	const storageRequestData = (storageRequest as any).unwrap();
+	if (storageRequestData.bucketId.toString() !== ctx.bucketId) {
+		throw new Error("Storage request bucketId mismatch");
+	}
+	if (storageRequestData.location.toUtf8() !== ctx.fileLocation) {
+		throw new Error("Storage request location mismatch");
+	}
+	if (
+		storageRequestData.fingerprint.toString() !== fingerprintResult.toString()
+	) {
+		throw new Error("Storage request fingerprint mismatch");
+	}
+	if (storageRequestData.size_.toString() !== ctx.fileSize.toString()) {
+		throw new Error("Storage request size mismatch");
+	}
+
 	console.log("[storage-request] ✓ Storage request issued and verified");
 }
-
-function extractPeerId(multiaddresses: string[]): string | undefined {
-	for (const ma of multiaddresses) {
-		const idx = ma.lastIndexOf("/p2p/");
-		if (idx !== -1) return ma.slice(idx + 5);
-	}
-	return undefined;
-}
-

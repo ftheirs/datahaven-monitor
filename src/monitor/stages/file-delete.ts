@@ -1,8 +1,10 @@
 // Stage 8: File deletion
 
 import type { FileInfo } from "@storagehub-sdk/core";
-import { pollBackend, waitForFinalization } from "../utils/waits";
+import type { FileTree } from "@storagehub-sdk/msp-client";
 import type { MonitorContext } from "../types";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Request file deletion on-chain and verify cleanup
@@ -45,41 +47,56 @@ export async function fileDeleteStage(ctx: MonitorContext): Promise<void> {
 		throw new Error("Delete file transaction failed");
 	}
 
-	// Wait for finalization
-	console.log("[file-delete] Waiting for finalization...");
-	await waitForFinalization(ctx.userApi);
-
-	// Verify deletion event
-	console.log("[file-delete] Verifying deletion event...");
-	const events = await ctx.userApi.query.system.events();
-	const eventsArray = events as any;
-	const deletionEvent = eventsArray.find(
-		(e: any) =>
-			e.event.section === "fileSystem" &&
-			e.event.method === "FileDeletionRequested",
+	// Wait for FileDeletionRequested event
+	console.log("[file-delete] Waiting for FileDeletionRequested event...");
+	const { blockHash } = await ctx.userApi.wait.forFinalizedEvent(
+		"fileSystem",
+		"FileDeletionRequested",
+		60_000,
 	);
-	if (!deletionEvent) {
-		throw new Error("FileDeletionRequested event not found");
+	console.log(`[file-delete] FileDeletionRequested seen in block ${blockHash}`);
+
+	// Wait for a couple of finalized blocks
+	const currentHdr = await ctx.userApi.rpc.chain.getHeader();
+	await ctx.userApi.wait.finalizedAtLeast(currentHdr.number.toBigInt() + 2n);
+
+	// Grace period for MSP to process deletion
+	console.log(
+		`[file-delete] Grace period (${ctx.network.delays.postFileDeletionMs / 1000}s)...`,
+	);
+	await sleep(ctx.network.delays.postFileDeletionMs);
+
+	// Wait for MSP to remove the file from bucket listing
+	console.log("[file-delete] Waiting for MSP to remove file from bucket...");
+	const isFilePresent = async (): Promise<boolean> => {
+		try {
+			const resp = await ctx.mspClient!.buckets.getFiles(ctx.bucketId!);
+			const stack: FileTree[] = [...resp.files];
+			while (stack.length > 0) {
+				const node = stack.pop()!;
+				if (node.type === "file") {
+					if (node.fileKey === ctx.fileKey) return true;
+				} else {
+					stack.push(...node.children);
+				}
+			}
+			return false;
+		} catch {
+			return false;
+		}
+	};
+
+	const maxWaitMs = 120_000;
+	const stepMs = 1_000;
+	let waited = 0;
+	while (await isFilePresent()) {
+		if (waited >= maxWaitMs) {
+			throw new Error("File not removed from bucket in time");
+		}
+		await sleep(stepMs);
+		waited += stepMs;
 	}
 
-	// Wait for MSP to remove the file
-	console.log("[file-delete] Waiting for MSP to remove file...");
-	await pollBackend(
-		async () => {
-			try {
-				const downloadResponse = await ctx.mspClient!.files.downloadFile(
-					ctx.fileKey!,
-				);
-				// If download succeeds, file still exists
-				return downloadResponse.status === 404;
-			} catch {
-				// If download fails, assume file is deleted
-				return true;
-			}
-		},
-		(deleted) => deleted,
-		{ retries: 60, delayMs: 5000 }, // Give more time for deletion cleanup
-	);
-
-	console.log(`[file-delete] ✓ File deleted: ${ctx.fileKey}`);
+	console.log(`[file-delete] ✓ File deleted and removed from bucket`);
 }
+

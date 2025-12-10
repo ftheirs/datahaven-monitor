@@ -1,8 +1,8 @@
-// Badge generation for Shields.io endpoint badges
+// Badge generation for shields.io
 
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
-import type { StageResult } from "../types";
+import { join } from "node:path";
+import type { StageResult, StageStatus } from "../types";
 
 type BadgeEndpoint = {
 	schemaVersion: 1;
@@ -15,47 +15,61 @@ type BadgeEndpoint = {
 const STAGE_LABELS: Record<string, string> = {
 	connection: "Connection",
 	health: "Health",
-	auth: "SIWE",
-	"bucket-create": "Create Bucket",
-	"storage-request": "Issue Storage Request",
-	"file-upload": "Upload File",
-	"file-download": "Download File",
-	"file-delete": "Delete File",
-	"bucket-delete": "Delete Bucket",
+	auth: "Auth (SIWE)",
+	"bucket-create": "Bucket Create",
+	"storage-request": "Storage Request",
+	"file-upload": "File Upload",
+	"file-download": "File Download",
+	"file-delete": "File Delete",
+	"bucket-delete": "Bucket Delete",
 };
 
-const COLOR_MAP: Record<string, string> = {
+const STATUS_COLORS: Record<StageStatus, string> = {
 	passed: "brightgreen",
 	failed: "red",
 	skipped: "lightgrey",
 };
 
+/**
+ * Generate badge JSON files for all stages
+ */
 export async function generateBadges(
 	results: StageResult[],
 	outputDir = "badges",
 ): Promise<void> {
 	await mkdir(outputDir, { recursive: true });
 
+	// Generate individual stage badges
 	for (const result of results) {
 		const badge: BadgeEndpoint = {
 			schemaVersion: 1,
-			label: `Sanity – ${STAGE_LABELS[result.stage] ?? result.stage}`,
+			label: STAGE_LABELS[result.stage] || result.stage,
 			message: result.status,
-			color: COLOR_MAP[result.status] ?? "lightgrey",
+			color: STATUS_COLORS[result.status],
 			cacheSeconds: 300,
 		};
 
-		const filePath = `${outputDir}/${result.stage}.json`;
-		await writeFile(filePath, `${JSON.stringify(badge, null, 2)}\n`, "utf8");
-		console.log(`[monitor] Generated badge: ${filePath}`);
+		const filename = `${result.stage}.json`;
+		const filepath = join(outputDir, filename);
+		await writeFile(filepath, JSON.stringify(badge, null, 2) + "\n");
 	}
 
-	// Also write a summary status file
-	const summary = {
-		generatedAt: new Date().toISOString(),
-		stages: Object.fromEntries(results.map((r) => [r.stage, r.status])),
+	// Generate summary status badge
+	const passed = results.filter((r) => r.status === "passed").length;
+	const failed = results.filter((r) => r.status === "failed").length;
+	const total = results.length;
+
+	const summaryBadge: BadgeEndpoint = {
+		schemaVersion: 1,
+		label: "Monitor Status",
+		message: failed > 0 ? `${failed}/${total} failed` : `${passed}/${total} passed`,
+		color: failed > 0 ? "red" : "brightgreen",
+		cacheSeconds: 300,
 	};
-	const summaryPath = `${outputDir}/status.json`;
-	await writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, "utf8");
-	console.log(`[monitor] Generated summary: ${summaryPath}`);
+
+	await writeFile(
+		join(outputDir, "status.json"),
+		JSON.stringify(summaryBadge, null, 2) + "\n",
+	);
 }
+

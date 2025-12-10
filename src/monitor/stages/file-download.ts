@@ -1,46 +1,74 @@
-// Stage 7: File download
+// Stage 7: File download and verification
 
+import { readFile } from "node:fs/promises";
+import { FileManager, initWasm } from "@storagehub-sdk/core";
+import { Readable } from "stream";
 import type { MonitorContext } from "../types";
 
 /**
  * Download file from MSP and verify content matches upload
  */
 export async function fileDownloadStage(ctx: MonitorContext): Promise<void> {
-	if (!ctx.mspClient || !ctx.fileKey || !ctx.fileBlob) {
+	if (!ctx.mspClient || !ctx.bucketId || !ctx.fileKey || !ctx.fingerprint) {
 		throw new Error("Required context not initialized");
 	}
 
-	// Download the file
+	// Download file from MSP
 	console.log("[file-download] Downloading file from MSP backend...");
-	const downloadResponse = await ctx.mspClient.files.downloadFile(ctx.fileKey);
+	const download = await ctx.mspClient.files.downloadFile(ctx.fileKey);
 
-	if (downloadResponse.status !== 200) {
-		throw new Error(`Download failed with status: ${downloadResponse.status}`);
+	if (download.status !== 200) {
+		throw new Error(`Download failed with status: ${download.status}`);
 	}
 
-	if (!downloadResponse.stream) {
-		throw new Error("Download did not return a stream");
+	// Read downloaded stream into blob
+	console.log("[file-download] Reading download stream...");
+	const chunks: Uint8Array[] = [];
+	const reader = download.stream.getReader();
+
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			chunks.push(value);
+		}
+	} finally {
+		reader.releaseLock();
 	}
 
-	// Convert stream to blob
-	const downloadedBlob = await new Response(downloadResponse.stream).blob();
+	// Combine chunks into single Uint8Array
+	const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+	const downloadedData = new Uint8Array(totalLength);
+	let offset = 0;
+	for (const chunk of chunks) {
+		downloadedData.set(chunk, offset);
+		offset += chunk.length;
+	}
 
-	// Compare with original file
-	console.log("[file-download] Verifying downloaded content...");
-	const originalBuffer = Buffer.from(await ctx.fileBlob.arrayBuffer());
-	const downloadedBuffer = Buffer.from(await downloadedBlob.arrayBuffer());
+	const downloadedBlob = new Blob([downloadedData]);
 
-	if (originalBuffer.length !== downloadedBuffer.length) {
+	console.log(
+		`[file-download] Downloaded ${downloadedBlob.size} bytes (expected ${ctx.fileBlob?.size || ctx.fileSize})`,
+	);
+
+	// Verify fingerprint matches original
+	console.log("[file-download] Verifying file integrity (fingerprint)...");
+	await initWasm();
+	const downloadedFileManager = new FileManager({
+		size: downloadedBlob.size,
+		stream: () => downloadedBlob.stream() as ReadableStream<Uint8Array>,
+	});
+
+	const downloadedFingerprint = await downloadedFileManager.getFingerprint();
+	const downloadedFingerprintHex = downloadedFingerprint.toHex();
+
+	if (downloadedFingerprintHex !== ctx.fingerprint) {
 		throw new Error(
-			`Downloaded file size mismatch: ${originalBuffer.length} !== ${downloadedBuffer.length}`,
+			`Fingerprint mismatch! Original: ${ctx.fingerprint}, Downloaded: ${downloadedFingerprintHex}`,
 		);
 	}
 
-	if (!originalBuffer.equals(downloadedBuffer)) {
-		throw new Error("Downloaded file content mismatch");
-	}
-
-	console.log(
-		`[file-download] ✓ File downloaded and verified (${downloadedBuffer.length} bytes)`,
-	);
+	console.log(`[file-download] ✓ Fingerprint verified: ${downloadedFingerprintHex}`);
+	console.log(`[file-download] ✓ File downloaded and verified successfully`);
 }
+

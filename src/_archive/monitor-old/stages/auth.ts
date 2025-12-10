@@ -1,5 +1,6 @@
 // Stage 3: SIWE authentication
 
+import { getAddress } from "viem";
 import type { MonitorContext } from "../types";
 
 /**
@@ -7,28 +8,28 @@ import type { MonitorContext } from "../types";
  */
 export async function authStage(ctx: MonitorContext): Promise<void> {
 	if (!ctx.mspClient) {
-		throw new Error("MSP client not initialized");
+		throw new Error("MspClient not initialized");
 	}
 
-	console.log("[auth] Authenticating with SIWE...");
+	console.log("[auth] Authenticating with MSP backend using SIWE...");
+	const domain = new URL(ctx.network.msp.baseUrl).hostname;
+	const uri = ctx.network.msp.baseUrl;
 	const siweSession = await ctx.mspClient.auth.SIWE(
 		ctx.walletClient,
-		ctx.network.msp.siweDomain,
-		ctx.network.msp.siweUri,
+		domain,
+		uri,
 	);
+	ctx.sessionToken = siweSession.token;
 
-	ctx.session = Object.freeze(siweSession);
-
-	// Verify authentication by calling getProfile
 	console.log("[auth] Verifying authentication...");
 	const profile = await ctx.mspClient.auth.getProfile();
 
-	if (profile.address.toLowerCase() !== ctx.account.address.toLowerCase()) {
+	// Compare using EIP-55 checksum-normalized addresses
+	if (profile.address !== getAddress(ctx.account.address)) {
 		throw new Error(
-			`Profile address mismatch: ${profile.address} !== ${ctx.account.address}`,
+			`Profile address mismatch: ${profile.address} !== ${getAddress(ctx.account.address)}`,
 		);
 	}
 
 	console.log(`[auth] ✓ Authenticated as ${profile.address}`);
 }
-

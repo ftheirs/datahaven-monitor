@@ -1,8 +1,7 @@
 // Stage 9: Bucket deletion
 
+import { pollBackend, waitForFinalization } from "../utils/waits";
 import type { MonitorContext } from "../types";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Delete bucket on-chain and verify removal
@@ -16,12 +15,6 @@ export async function bucketDeleteStage(ctx: MonitorContext): Promise<void> {
 	) {
 		throw new Error("Required context not initialized");
 	}
-
-	// Grace period before bucket deletion
-	console.log(
-		`[bucket-delete] Grace period (${ctx.network.delays.postBucketDeletionMs / 1000}s)...`,
-	);
-	await sleep(ctx.network.delays.postBucketDeletionMs);
 
 	// Delete the bucket
 	console.log("[bucket-delete] Deleting bucket on-chain...");
@@ -41,10 +34,9 @@ export async function bucketDeleteStage(ctx: MonitorContext): Promise<void> {
 		throw new Error("Delete bucket transaction failed");
 	}
 
-	// Wait for a couple of finalized blocks
+	// Wait for finalization
 	console.log("[bucket-delete] Waiting for finalization...");
-	const currentHdr = await ctx.userApi.rpc.chain.getHeader();
-	await ctx.userApi.wait.finalizedAtLeast(currentHdr.number.toBigInt() + 2n);
+	await waitForFinalization(ctx.userApi);
 
 	// Verify bucket no longer exists on-chain
 	console.log("[bucket-delete] Verifying bucket removed from chain...");
@@ -55,6 +47,21 @@ export async function bucketDeleteStage(ctx: MonitorContext): Promise<void> {
 		throw new Error("Bucket still exists on-chain after deletion");
 	}
 
+	// Wait for MSP backend to remove the bucket
+	console.log("[bucket-delete] Waiting for MSP backend to remove bucket...");
+	await pollBackend(
+		async () => {
+			try {
+				const buckets = await ctx.mspClient!.buckets.listBuckets();
+				return !buckets.some((b) => b.bucketId === ctx.bucketId);
+			} catch {
+				// If listBuckets fails, assume bucket is gone
+				return true;
+			}
+		},
+		(removed) => removed,
+		{ retries: 40, delayMs: 3000 },
+	);
+
 	console.log(`[bucket-delete] ✓ Bucket deleted: ${ctx.bucketId}`);
 }
-

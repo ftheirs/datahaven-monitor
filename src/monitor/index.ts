@@ -1,6 +1,8 @@
-// Main orchestrator for DataHaven monitoring suite
+// Main monitor orchestrator
 
-import { initializeContext } from "./context";
+import { createPublicClient, createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { getNetworkConfig, getPrivateKey } from "./config";
 import { authStage } from "./stages/auth";
 import { bucketCreateStage } from "./stages/bucket-create";
 import { bucketDeleteStage } from "./stages/bucket-delete";
@@ -25,127 +27,133 @@ const STAGES: Array<{ name: string; fn: StageFunction }> = [
 	{ name: "bucket-delete", fn: bucketDeleteStage },
 ];
 
-/**
- * Run a single stage and capture its result
- */
 async function runStage(
 	name: string,
 	fn: StageFunction,
 	ctx: MonitorContext,
 	results: StageResult[],
-): Promise<void> {
+): Promise<boolean> {
 	console.log(`\n${"=".repeat(80)}`);
 	console.log(`[monitor] Running stage: ${name}`);
 	console.log("=".repeat(80));
 
-	const start = Date.now();
+	const startTime = Date.now();
 	try {
 		await fn(ctx);
-		const duration = Date.now() - start;
+		const duration = Date.now() - startTime;
 		results.push({ stage: name, status: "passed", duration });
 		console.log(`[monitor] ✓ Stage ${name} passed (${duration}ms)`);
+		return true;
 	} catch (error) {
-		const duration = Date.now() - start;
-		const errorMessage = error instanceof Error ? error.message : String(error);
-		results.push({
-			stage: name,
-			status: "failed",
-			error: errorMessage,
-			duration,
-		});
-		console.error(
-			`[monitor] ✗ Stage ${name} failed (${duration}ms):`,
-			errorMessage,
-		);
-		// Don't throw - continue to next stage
+		const duration = Date.now() - startTime;
+		const errorMsg = error instanceof Error ? error.message : String(error);
+		results.push({ stage: name, status: "failed", error: errorMsg, duration });
+		console.log(`[monitor] ✗ Stage ${name} failed (${duration}ms): ${errorMsg}`);
+		return false;
 	}
 }
 
-/**
- * Cleanup resources
- */
 async function cleanup(ctx: MonitorContext): Promise<void> {
-	console.log("\n[monitor] Cleaning up...");
+	console.log("\n[monitor] Cleaning up resources...");
 
-	// Disconnect userApi
-	try {
-		if (ctx.userApi) {
+	// Disconnect userApi if connected
+	if (ctx.userApi) {
+		try {
 			await ctx.userApi.disconnect();
 			console.log("[monitor] Disconnected userApi");
+		} catch (error) {
+			console.log("[monitor] Failed to disconnect userApi:", error);
 		}
-	} catch (error) {
-		console.warn("[monitor] Failed to disconnect userApi:", error);
 	}
 }
 
-/**
- * Main monitor execution
- */
 export async function runMonitor(): Promise<void> {
+	const network = getNetworkConfig();
+	const privateKey = getPrivateKey();
+
 	console.log("=".repeat(80));
-	console.log("DataHaven Monitor - Testnet Sentinel");
+	console.log("[monitor] DataHaven Monitor");
+	console.log(`[monitor] Network: ${network.name}`);
 	console.log("=".repeat(80));
+
+	// Initialize account and clients
+	const account = privateKeyToAccount(privateKey);
+	const walletClient = createWalletClient({
+		account,
+		transport: http(network.chain.evmRpcUrl),
+	});
+	const publicClient = createPublicClient({
+		transport: http(network.chain.evmRpcUrl),
+	});
+
+	const ctx: MonitorContext = {
+		network,
+		account,
+		walletClient,
+		publicClient,
+	};
 
 	const results: StageResult[] = [];
-	let ctx: MonitorContext | undefined;
+	let failed = false;
 
 	try {
-		// Initialize context
-		ctx = await initializeContext();
-
 		// Run all stages sequentially
 		for (const stage of STAGES) {
-			await runStage(stage.name, stage.fn, ctx, results);
+			if (failed) {
+				// Skip remaining stages if one failed
+				results.push({
+					stage: stage.name,
+					status: "skipped",
+					duration: 0,
+				});
+			} else {
+				const success = await runStage(stage.name, stage.fn, ctx, results);
+				if (!success) {
+					failed = true;
+				}
+			}
 		}
 	} catch (error) {
-		console.error("[monitor] Fatal error:", error);
-		process.exitCode = 1;
+		console.error("\n[monitor] Fatal error:", error);
+		failed = true;
 	} finally {
-		// Cleanup
-		if (ctx) {
-			await cleanup(ctx);
-		}
+		// Cleanup resources
+		await cleanup(ctx);
 
 		// Generate badges
-		try {
-			const badgesDir = process.env.MONITOR_OUTPUT_DIR ?? "badges";
-			await generateBadges(results, badgesDir);
-		} catch (error) {
-			console.error("[monitor] Failed to generate badges:", error);
-		}
+		console.log("\n[monitor] Generating badges...");
+		await generateBadges(results);
 
 		// Print summary
 		console.log("\n" + "=".repeat(80));
 		console.log("Monitor Summary");
 		console.log("=".repeat(80));
 		for (const result of results) {
-			const icon =
-				result.status === "passed"
-					? "✓"
-					: result.status === "failed"
-						? "✗"
-						: "○";
-			console.log(
-				`${icon} ${result.stage.padEnd(20)} ${result.status.padEnd(10)} ${result.duration ? `${result.duration}ms` : ""}`,
-			);
+			const icon = result.status === "passed" ? "✓" : result.status === "failed" ? "✗" : "○";
+			const status = result.status.padEnd(10);
+			const duration = `${result.duration}ms`.padStart(8);
+			console.log(`${icon} ${result.stage.padEnd(20)} ${status} ${duration}`);
 			if (result.error) {
 				console.log(`  Error: ${result.error}`);
 			}
 		}
 		console.log("=".repeat(80));
 
-		// Exit with error if any stage failed
-		const failed = results.some((r) => r.status === "failed");
 		if (failed) {
-			console.error("\n[monitor] ✗ Monitor failed - one or more stages failed");
+			console.log("\n[monitor] ✗ Monitor failed - one or more stages failed");
 			process.exitCode = 1;
 		} else {
 			console.log("\n[monitor] ✓ Monitor completed successfully");
+			process.exitCode = 0;
 		}
 	}
 }
 
-// Run if invoked directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-	void runMonitor();
+// Run monitor if executed directly
+if (import.meta.main) {
+	runMonitor().catch((err) => {
+		console.error("❌ Monitor crashed:", err);
+		process.exit(1);
+	});
 }
+

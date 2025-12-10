@@ -35,6 +35,13 @@ export async function bucketCreateStage(ctx: MonitorContext): Promise<void> {
   console.log(`[bucket-create] Bucket name: ${ctx.bucketName}`);
   console.log(`[bucket-create] Bucket ID: ${ctx.bucketId}`);
 
+  // Verify bucket doesn't exist
+  console.log("[bucket-create] Verifying bucket doesn't exist...");
+  const bucketBefore = await ctx.userApi.query.providers.buckets(ctx.bucketId);
+  if ((bucketBefore as any).isSome) {
+    throw new Error("Bucket already exists");
+  }
+
   // Create the bucket
   console.log("[bucket-create] Creating bucket on-chain...");
   const txHash = await ctx.storageHubClient.createBucket(
@@ -66,6 +73,13 @@ export async function bucketCreateStage(ctx: MonitorContext): Promise<void> {
   if ((bucketAfter as any).isNone) {
     throw new Error("Bucket not found on-chain after creation");
   }
+  const bucketData = (bucketAfter as any).unwrap();
+  if (bucketData.userId.toString() !== ctx.account.address) {
+    throw new Error("Bucket userId mismatch");
+  }
+  if (bucketData.mspId.toString() !== ctx.mspId) {
+    throw new Error("Bucket mspId mismatch");
+  }
 
   // Wait for MSP backend to index the bucket
   console.log("[bucket-create] Waiting for MSP backend to index bucket...");
@@ -74,8 +88,15 @@ export async function bucketCreateStage(ctx: MonitorContext): Promise<void> {
       const buckets = await ctx.mspClient!.buckets.listBuckets();
       return buckets.some((b) => b.bucketId === ctx.bucketId);
     },
+    (found) => found,
     { retries: 40, delayMs: 3000 },
   );
+
+  // Verify we can get the bucket directly
+  const sdkBucket = await ctx.mspClient.buckets.getBucket(ctx.bucketId);
+  if (sdkBucket.bucketId !== ctx.bucketId) {
+    throw new Error("Bucket ID mismatch from MSP backend");
+  }
 
   console.log(`[bucket-create] ✓ Bucket created and indexed: ${ctx.bucketId}`);
 }

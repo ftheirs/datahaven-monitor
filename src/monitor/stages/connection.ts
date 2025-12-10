@@ -1,7 +1,11 @@
-// Stage 1: Connection check
+// Stage 1: Connection verification
 
-import { StorageHubClient } from "@storagehub-sdk/core";
+import {
+	SH_FILE_SYSTEM_PRECOMPILE_ADDRESS,
+	StorageHubClient,
+} from "@storagehub-sdk/core";
 import { MspClient } from "@storagehub-sdk/msp-client";
+import { defineChain } from "viem";
 import { createUserApi } from "../../userApi";
 import type { MonitorContext } from "../types";
 
@@ -9,27 +13,32 @@ import type { MonitorContext } from "../types";
  * Verify SDK clients can connect to StorageHub chain and MSP backend
  */
 export async function connectionStage(ctx: MonitorContext): Promise<void> {
-	console.log("[connection] Creating StorageHubClient...");
-	ctx.storageHubClient = new StorageHubClient({
-		rpcUrl: ctx.network.chain.evmRpcUrl,
-		chain: {
-			id: ctx.network.chain.id,
-			name: ctx.network.chain.name,
-			nativeCurrency: { name: "Mock", symbol: "MOCK", decimals: 18 },
-			rpcUrls: {
-				default: { http: [ctx.network.chain.evmRpcUrl] },
-			},
+	// Define chain for viem
+	const chain = defineChain({
+		id: ctx.network.chain.id,
+		name: ctx.network.chain.name,
+		network: ctx.network.name.toLowerCase().replace(/\s/g, "-"),
+		nativeCurrency: { name: "Token", symbol: "TOKEN", decimals: 18 },
+		rpcUrls: {
+			default: { http: [ctx.network.chain.evmRpcUrl] },
+			public: { http: [ctx.network.chain.evmRpcUrl] },
 		},
-		walletClient: ctx.walletClient,
-		filesystemContractAddress: ctx.network.chain.filesystemPrecompileAddress,
 	});
 
-	console.log("[connection] Creating MspClient...");
-	const sessionProvider = async () =>
-		ctx.sessionToken
-			? ({ token: ctx.sessionToken, user: { address: "" } } as const)
-			: undefined;
+	// Initialize StorageHub client
+	console.log("[connection] Creating StorageHub client...");
+	ctx.storageHubClient = new StorageHubClient({
+		rpcUrl: ctx.network.chain.evmRpcUrl,
+		chain,
+		walletClient: ctx.walletClient,
+		filesystemContractAddress:
+			ctx.network.chain.filesystemPrecompileAddress ??
+			SH_FILE_SYSTEM_PRECOMPILE_ADDRESS,
+	});
 
+	// Initialize MSP client (without session for now)
+	console.log("[connection] Creating MSP client...");
+	const sessionProvider = async () => ctx.session;
 	ctx.mspClient = await MspClient.connect(
 		{
 			baseUrl: ctx.network.msp.baseUrl,
@@ -38,21 +47,18 @@ export async function connectionStage(ctx: MonitorContext): Promise<void> {
 		sessionProvider,
 	);
 
-	console.log("[connection] Creating userApi (Substrate RPC)...");
-	ctx.userApi = await createUserApi(
-		ctx.network.chain.substrateWsUrl as `wss://${string}`,
-	);
+	// Initialize Substrate userApi
+	console.log("[connection] Creating Substrate userApi...");
+	ctx.userApi = await createUserApi(ctx.network.chain.substrateWsUrl);
 
-	// Verify basic connectivity
+	// Verify connectivity with simple queries
 	console.log("[connection] Verifying chain connectivity...");
-	const peerId = await ctx.userApi.reads.localPeerId();
-	console.log(`[connection] Chain peer ID: ${peerId}`);
+	const blockNumber = await ctx.publicClient.getBlockNumber();
+	console.log(`[connection] Current block number: ${blockNumber}`);
 
-	console.log("[connection] Verifying MSP backend connectivity...");
-	const health = await ctx.mspClient.info.getHealth();
-	if (health.status !== "healthy") {
-		throw new Error(`MSP health check failed: ${health.status}`);
-	}
+	const chainHeader = await ctx.userApi.rpc.chain.getHeader();
+	console.log(`[connection] Substrate block: ${chainHeader.number.toString()}`);
 
 	console.log("[connection] ✓ All clients connected successfully");
 }
+

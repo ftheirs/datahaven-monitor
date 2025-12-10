@@ -2,30 +2,32 @@
 
 import { readFile } from "node:fs/promises";
 import { TypeRegistry } from "@polkadot/types";
-import { FileManager, initWasm } from "@storagehub-sdk/core";
-import type { FileManager as FM } from "@storagehub-sdk/core";
-import { pollBackend, waitForStorageRequestFulfilled } from "../utils/waits";
+import type { AccountId20, H256 } from "@polkadot/types/interfaces";
+import { FileManager } from "@storagehub-sdk/core";
+import type { MspClient } from "@storagehub-sdk/msp-client";
+import { pollBackend, sleep } from "../utils/waits";
 import type { MonitorContext } from "../types";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Upload file to MSP backend with retry logic
  */
 async function uploadWithRetry(
-  ctx: MonitorContext,
+  mspClient: MspClient,
+  bucketId: string,
   fileKey: string,
   fileBlob: Blob,
-  { retries = 5, delayMs = 10_000 }: { retries?: number; delayMs?: number } = {},
+  address: string,
+  location: string,
+  { retries = 3, delayMs = 5000 }: { retries?: number; delayMs?: number } = {},
 ) {
-  for (let i = 0; i < retries; i++) {
+  for (let i = 0; i < retries; i += 1) {
     try {
-      return await ctx.mspClient!.files.uploadFile(
-        ctx.bucketId!,
+      return await mspClient.files.uploadFile(
+        bucketId,
         fileKey,
         fileBlob,
-        ctx.account.address,
-        ctx.fileLocation!,
+        address,
+        location,
       );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -61,21 +63,13 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
     !ctx.userApi ||
     !ctx.bucketId ||
     !ctx.fileLocation ||
-    !ctx.fingerprint ||
-    !ctx.fileKey
+    !ctx.fingerprint
   ) {
     throw new Error("Required context not initialized");
   }
 
-  // Wait for MSP to process storage request
-  console.log(
-    `[file-upload] Waiting for MSP readiness (${ctx.network.delays.beforeUploadMs / 1000}s)...`,
-  );
-  await sleep(ctx.network.delays.beforeUploadMs);
-
-  // Recompute file key after storage request (CRITICAL)
+  // CRITICAL: Recompute fileKey AFTER storage request (matching minimal flow)
   console.log("[file-upload] Recomputing file key after storage request...");
-  await initWasm();
   const fileBuffer = await readFile(ctx.network.test.testFilePath);
   const fileBlob = new Blob([fileBuffer]);
   const fileManager = new FileManager({
@@ -84,19 +78,11 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
   });
 
   const registry = new TypeRegistry();
-  type FileManagerOwner = Parameters<FM["computeFileKey"]>[0];
-  type FileManagerBucket = Parameters<FM["computeFileKey"]>[1];
-  const owner = registry.createType(
-    "AccountId20",
-    ctx.account.address,
-  ) as unknown as FileManagerOwner;
-  const bucketIdH256 = registry.createType(
-    "H256",
-    ctx.bucketId,
-  ) as unknown as FileManagerBucket;
+  const owner = registry.createType("AccountId20", ctx.account.address);
+  const bucketIdH256 = registry.createType("H256", ctx.bucketId);
   const finalFileKey = await fileManager.computeFileKey(
-    owner,
-    bucketIdH256,
+    owner as any,
+    bucketIdH256 as any,
     ctx.fileLocation,
   );
   const fileKeyHex = finalFileKey.toHex();
@@ -108,16 +94,30 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
     );
   }
 
-  // Get fresh blob for upload
+  // Wait for MSP to process storage request (matching demo app timing)
+  console.log(
+    "[file-upload] Waiting for MSP to process storage request (15s)...",
+  );
+  await sleep(15000);
+
+  // Get fresh blob for upload (matching minimal flow)
   console.log("[file-upload] Getting fresh file blob...");
   const uploadBlob = await fileManager.getFileBlob();
 
   // Upload the file with retries
   console.log("[file-upload] Uploading file to MSP backend...");
-  const uploadResponse = await uploadWithRetry(ctx, fileKeyHex, uploadBlob, {
-    retries: 5,
-    delayMs: 10_000,
-  });
+  const uploadResponse = await uploadWithRetry(
+    ctx.mspClient,
+    ctx.bucketId,
+    fileKeyHex,
+    uploadBlob,
+    ctx.account.address,
+    ctx.fileLocation,
+    {
+      retries: 5,
+      delayMs: 10000,
+    },
+  );
 
   // Verify upload response
   if (uploadResponse.status !== "upload_successful") {
@@ -126,16 +126,15 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
   if (uploadResponse.fileKey !== fileKeyHex) {
     throw new Error("Upload fileKey mismatch");
   }
-
-  console.log(`[file-upload] ✓ File uploaded: ${fileKeyHex}`);
-
-  // Listen for on-chain fulfillment
-  console.log("[file-upload] Listening for StorageRequestFulfilled event...");
-  const blockHash = await waitForStorageRequestFulfilled(
-    ctx.userApi,
-    fileKeyHex as `0x${string}`,
-  );
-  console.log(`[file-upload] StorageRequestFulfilled seen in block ${blockHash}`);
+  if (`0x${uploadResponse.bucketId}` !== ctx.bucketId) {
+    throw new Error("Upload bucketId mismatch");
+  }
+  if (uploadResponse.fingerprint !== ctx.fingerprint) {
+    throw new Error("Upload fingerprint mismatch");
+  }
+  if (uploadResponse.location !== ctx.fileLocation) {
+    throw new Error("Upload location mismatch");
+  }
 
   // Wait for file to be indexed by MSP backend
   console.log("[file-upload] Waiting for file to be indexed by MSP backend...");
@@ -151,11 +150,13 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
         return false;
       }
     },
+    (found) => found,
     { retries: 40, delayMs: 3000 },
   );
 
-  // Store the final fileKey in context for subsequent stages
+  // Store the final fileKey and blob in context for subsequent stages
   ctx.fileKey = fileKeyHex;
+  ctx.fileBlob = uploadBlob;
 
   console.log(`[file-upload] ✓ File uploaded and indexed: ${fileKeyHex}`);
 }
