@@ -1,0 +1,14 @@
+{
+	"generatedAt": "2025-12-09T17:49:45.418Z",
+	"stages": {
+		"connection": "passed",
+		"health": "passed",
+		"siwe": "passed",
+		"bucket": "passed",
+		"issue": "passed",
+		"upload": "failed",
+		"download": "skipped",
+		"filedelete": "skipped",
+		"bucketdelete": "skipped"
+	}
+}

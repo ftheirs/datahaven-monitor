@@ -1,0 +1,59 @@
+name: Monitor – Testnet Sentinel
+
+on:
+  schedule:
+    # Run every hour
+    - cron: "0 * * * *"
+    # Uncomment for 15-minute runs:
+    # - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    name: Run Testnet Sentinel
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run monitor
+        env:
+          ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
+          DATAHAVEN_NETWORK: stagenet
+          MONITOR_OUTPUT_DIR: badges
+        run: bun run monitor
+
+      - name: Publish badge endpoints to gh-pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: badges
+          keep_files: false
+
+      - name: Fail if any stage failed
+        if: always()
+        run: |
+          if [ -f badges/status.json ]; then
+            if grep -q '"failed"' badges/status.json; then
+              echo "One or more stages failed"
+              exit 1
+            fi
+          fi
+

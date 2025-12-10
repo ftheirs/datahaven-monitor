@@ -1,17 +1,19 @@
 ## Testnet Sentinel (datahaven-monitor)
 
-- [![Sanity – Connection](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/connection.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Health](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/health.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – SIWE](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/siwe.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Upload](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/upload.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Download](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/download.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – Delete](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/delete.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
-- [![Sanity – SDK](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/sdk.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/sanity-cron.yml)
+- [![Sanity – Connection](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/connection.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – Health](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/health.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – SIWE](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/auth.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – Create Bucket](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/bucket-create.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – Issue Storage Request](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/storage-request.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – Upload File](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/file-upload.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – Download File](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/file-download.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – Delete File](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/file-delete.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
+- [![Sanity – Delete Bucket](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/bucket-delete.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
 - [![Stress – Manual](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml/badge.svg?branch=main)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/manual-stress.yml)
 
-Testnet Sentinel runs connection, health, auth, upload/download, and cleanup checks
-against the StorageHub Testnet. Each CI workflow tracks a specific stage so you can
-see green checks per part directly in GitHub.
+Testnet Sentinel runs comprehensive end-to-end monitoring of StorageHub functionality,
+testing the full lifecycle: connection, authentication, bucket management, file storage,
+and cleanup. Each stage is monitored and badged independently.
 
 ### Quick start (local)
 
@@ -22,36 +24,36 @@ see green checks per part directly in GitHub.
 bun install
 ```
 
-- **Build TypeScript**:
+- **Run the monitor** (requires MSP-capable private key):
 
 ```bash
-bun run build
+ACCOUNT_PRIVATE_KEY=0x... DATAHAVEN_NETWORK=stagenet bun run monitor
 ```
 
-- **Run the full sentinel suite**:
+Available networks: `stagenet` (default), `testnet`
 
-```bash
-bun run sanity:full
-```
+### Architecture
 
-- **Run a specific stage**:
+The monitor is structured as a sequential test suite with 9 stages:
 
-```bash
-bun run sanity:connection    # connectivity only
-bun run sanity:health        # backend health
-bun run sanity:siwe          # SIWE auth
-bun run sanity:upload        # bucket + uploads
-bun run sanity:download      # upload + download
-bun run sanity:delete        # upload + delete flows
-```
+1. **Connection**: Verify SDK clients can connect to chain and MSP backend
+2. **Health**: Check MSP backend health status
+3. **Auth**: Authenticate via SIWE (Sign-In with Ethereum)
+4. **Bucket Create**: Create bucket on-chain and wait for indexing
+5. **Storage Request**: Issue storage request with proper chain finalization waits
+6. **File Upload**: Upload file after MSP readiness confirmation
+7. **File Download**: Download and verify file integrity
+8. **File Delete**: Request deletion and verify cleanup
+9. **Bucket Delete**: Delete bucket and verify removal
 
-### What exists right now
+Each stage runs independently and reports its status (passed/failed/skipped) to generate
+dynamic badges. The monitor uses proper wait mechanisms for chain finalization and backend
+indexing to handle public network constraints.
 
-- Bun + TypeScript project scaffolded with Biome configuration.
-- Sanity entrypoint under `src/sanity` that exercises StorageHub SDK calls across
-  connection, health, SIWE, upload/download, deletion, and SDK smoke checks.
-- GitHub Actions workflow `sanity-cron.yml` scheduled every 15 minutes to
-  build and run the full sentinel suite (currently set to hourly; the 15-minute
-  cron is kept commented for future use), plus per-stage workflows with matching
-  badges, a reusable `notify.yml` template, and a placeholder `manual-stress.yml`
-  workflow.
+### Technology
+
+- **Runtime**: Bun + TypeScript
+- **SDKs**: `@storagehub-sdk/core`, `@storagehub-sdk/msp-client`
+- **Chain interaction**: Polkadot.js API + Viem
+- **CI/CD**: GitHub Actions with hourly cron (configurable to 15min)
+- **Badges**: Shields.io endpoint badges hosted on gh-pages

@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2025-12-10T12:49:05.731Z",
+  "stages": {
+    "connection": "passed",
+    "health": "passed",
+    "auth": "passed",
+    "bucket-create": "passed",
+    "storage-request": "passed",
+    "file-upload": "failed",
+    "file-download": "failed",
+    "file-delete": "failed",
+    "bucket-delete": "failed"
+  }
+}
