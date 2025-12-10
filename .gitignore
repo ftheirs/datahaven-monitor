@@ -5,4 +5,10 @@ dist
 bun.lockb
 .DS_Store
 
+# Generated badge artifacts (published to gh-pages)
+badges/
+
+# Downloaded test files
+downloaded*.bin
+downloaded*.jpg
 
