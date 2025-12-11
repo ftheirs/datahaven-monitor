@@ -45,6 +45,145 @@ jobs:
           publish_dir: badges
           keep_files: false
 
+      - name: Download previous status
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p previous
+          curl -f -o previous/status.json https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/status.json || echo "No previous status found"
+
+      - name: Check for status changes
+        if: always()
+        id: status_check
+        run: |
+          # Parse current status
+          CURRENT_STATUS="unknown"
+          CURRENT_FAILED_STAGES=""
+          if [ -f badges/status.json ]; then
+            if grep -q '"failed"' badges/status.json; then
+              CURRENT_STATUS="failed"
+              CURRENT_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' badges/status.json | tr '\n' ',' | sed 's/,$//')
+            elif grep -q '"success"' badges/status.json; then
+              CURRENT_STATUS="success"
+            fi
+          fi
+
+          # Parse previous status
+          PREVIOUS_STATUS="unknown"
+          PREVIOUS_FAILED_STAGES=""
+          if [ -f previous/status.json ]; then
+            if grep -q '"failed"' previous/status.json; then
+              PREVIOUS_STATUS="failed"
+              PREVIOUS_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' previous/status.json | tr '\n' ',' | sed 's/,$//')
+            elif grep -q '"success"' previous/status.json; then
+              PREVIOUS_STATUS="success"
+            fi
+          fi
+
+          # Determine if status changed
+          STATUS_CHANGED="false"
+          if [ "$CURRENT_STATUS" != "$PREVIOUS_STATUS" ]; then
+            STATUS_CHANGED="true"
+          elif [ "$CURRENT_STATUS" = "failed" ] && [ "$CURRENT_FAILED_STAGES" != "$PREVIOUS_FAILED_STAGES" ]; then
+            # Failed stages changed
+            STATUS_CHANGED="true"
+          fi
+
+          echo "current_status=$CURRENT_STATUS" >> $GITHUB_OUTPUT
+          echo "previous_status=$PREVIOUS_STATUS" >> $GITHUB_OUTPUT
+          echo "status_changed=$STATUS_CHANGED" >> $GITHUB_OUTPUT
+          echo "current_failed_stages=$CURRENT_FAILED_STAGES" >> $GITHUB_OUTPUT
+          echo "previous_failed_stages=$PREVIOUS_FAILED_STAGES" >> $GITHUB_OUTPUT
+
+          echo "Current: $CURRENT_STATUS (failed stages: $CURRENT_FAILED_STAGES)"
+          echo "Previous: $PREVIOUS_STATUS (failed stages: $PREVIOUS_FAILED_STAGES)"
+          echo "Status changed: $STATUS_CHANGED"
+
+      - name: Send Slack notification
+        if: always() && steps.status_check.outputs.status_changed == 'true' && secrets.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          CURRENT_STATUS: ${{ steps.status_check.outputs.current_status }}
+          PREVIOUS_STATUS: ${{ steps.status_check.outputs.previous_status }}
+          CURRENT_FAILED: ${{ steps.status_check.outputs.current_failed_stages }}
+          PREVIOUS_FAILED: ${{ steps.status_check.outputs.previous_failed_stages }}
+        run: |
+          # Determine emoji and color
+          if [ "$CURRENT_STATUS" = "success" ]; then
+            EMOJI="✅"
+            COLOR="good"
+            STATUS_TEXT="All checks passing"
+          elif [ "$CURRENT_STATUS" = "failed" ]; then
+            EMOJI="❌"
+            COLOR="danger"
+            STATUS_TEXT="Some checks failed"
+          else
+            EMOJI="⚠️"
+            COLOR="warning"
+            STATUS_TEXT="Status unknown"
+          fi
+
+          # Build status change message
+          if [ "$PREVIOUS_STATUS" = "unknown" ]; then
+            CHANGE_TEXT="Initial run"
+          elif [ "$PREVIOUS_STATUS" = "success" ] && [ "$CURRENT_STATUS" = "failed" ]; then
+            CHANGE_TEXT="🔴 Status degraded: Success → Failed"
+          elif [ "$PREVIOUS_STATUS" = "failed" ] && [ "$CURRENT_STATUS" = "success" ]; then
+            CHANGE_TEXT="🟢 Status recovered: Failed → Success"
+          elif [ "$PREVIOUS_STATUS" = "failed" ] && [ "$CURRENT_STATUS" = "failed" ]; then
+            CHANGE_TEXT="⚠️ Failed stages changed"
+          else
+            CHANGE_TEXT="Status changed"
+          fi
+
+          # Build failed stages message
+          FAILED_MSG=""
+          if [ -n "$CURRENT_FAILED" ]; then
+            FAILED_MSG="\n*Failed stages:* $CURRENT_FAILED"
+          fi
+
+          # Build comparison if both had failures
+          COMPARISON=""
+          if [ -n "$PREVIOUS_FAILED" ] && [ -n "$CURRENT_FAILED" ]; then
+            COMPARISON="\n*Previously failed:* $PREVIOUS_FAILED"
+          fi
+
+          # Send to Slack
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"text\": \"$EMOJI Testnet Sentinel - Status Change\",
+              \"attachments\": [
+                {
+                  \"color\": \"$COLOR\",
+                  \"fields\": [
+                    {
+                      \"title\": \"Change\",
+                      \"value\": \"$CHANGE_TEXT\",
+                      \"short\": false
+                    },
+                    {
+                      \"title\": \"Current Status\",
+                      \"value\": \"$STATUS_TEXT$FAILED_MSG$COMPARISON\",
+                      \"short\": false
+                    },
+                    {
+                      \"title\": \"Network\",
+                      \"value\": \"Stagenet\",
+                      \"short\": true
+                    },
+                    {
+                      \"title\": \"Run\",
+                      \"value\": \"<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>\",
+                      \"short\": true
+                    }
+                  ],
+                  \"footer\": \"Testnet Sentinel\",
+                  \"ts\": $(date +%s)
+                }
+              ]
+            }"
+
       - name: Fail if any stage failed
         if: always()
         run: |
