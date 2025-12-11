@@ -14,6 +14,8 @@ import { healthStage } from "./stages/health";
 import { storageRequestStage } from "./stages/storage-request";
 import type { MonitorContext, StageFunction, StageResult } from "./types";
 import { generateBadges } from "./utils/badges";
+import { writeFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 const STAGES: Array<{ name: string; fn: StageFunction }> = [
 	{ name: "connection", fn: connectionStage },
@@ -65,6 +67,39 @@ async function cleanup(ctx: MonitorContext): Promise<void> {
 			console.log("[monitor] Failed to disconnect userApi:", error);
 		}
 	}
+}
+
+async function generateDetailedStatus(
+	results: StageResult[],
+	failed: boolean,
+): Promise<void> {
+	const outputDir = process.env.MONITOR_OUTPUT_DIR || "badges";
+
+	const passed = results.filter((r) => r.status === "passed").length;
+	const failedCount = results.filter((r) => r.status === "failed").length;
+	const skipped = results.filter((r) => r.status === "skipped").length;
+
+	const detailedStatus = {
+		timestamp: new Date().toISOString(),
+		overall: failed ? "failed" : "success",
+		summary: {
+			total: results.length,
+			passed,
+			failed: failedCount,
+			skipped,
+		},
+		stages: results.map((r) => ({
+			name: r.stage,
+			status: r.status,
+			duration: r.duration,
+			error: r.error,
+		})),
+	};
+
+	await mkdir(outputDir, { recursive: true });
+	const statusPath = join(outputDir, "monitor-status.json");
+	await writeFile(statusPath, JSON.stringify(detailedStatus, null, 2));
+	console.log(`[monitor] Detailed status written to ${statusPath}`);
 }
 
 export async function runMonitor(): Promise<void> {
@@ -123,6 +158,9 @@ export async function runMonitor(): Promise<void> {
 		// Generate badges
 		console.log("\n[monitor] Generating badges...");
 		await generateBadges(results);
+
+		// Generate detailed status JSON for Slack notifications
+		await generateDetailedStatus(results, failed);
 
 		// Print summary
 		console.log("\n" + "=".repeat(80));
