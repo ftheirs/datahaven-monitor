@@ -1,58 +1,57 @@
 {
-  "timestamp": "2025-12-11T14:11:19.589Z",
-  "overall": "failed",
+  "timestamp": "2025-12-11T14:15:37.696Z",
+  "overall": "success",
   "summary": {
     "total": 9,
-    "passed": 3,
-    "failed": 1,
-    "skipped": 5
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2044
+      "duration": 2672
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 430
+      "duration": 663
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 708
+      "duration": 929
     },
     {
       "name": "bucket-create",
-      "status": "failed",
-      "duration": 1921,
-      "error": "The contract function \"createBucket\" reverted with the following reason:\nDispatched call failed with error: Module(ModuleError { index: 80, error: [6, 0, 0, 0], message: Some(\"NotEnoughBalance\") })\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373635343632323737393138, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0xC0F0f4ab324C46e55D02D0033343B4Be8A55532d\n\nDocs: https://viem.sh/docs/contract/estimateContractGas\nVersion: viem@2.41.2"
+      "status": "passed",
+      "duration": 23389
     },
     {
       "name": "storage-request",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 33823
     },
     {
       "name": "file-upload",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 38489
     },
     {
       "name": "file-download",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 1012
     },
     {
       "name": "file-delete",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 49841
     },
     {
       "name": "bucket-delete",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 32645
     }
   ]
 }
