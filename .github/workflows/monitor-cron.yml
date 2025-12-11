@@ -33,7 +33,7 @@ jobs:
       - name: Run monitor
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
-          DATAHAVEN_NETWORK: testnet
+          DATAHAVEN_NETWORK: stagenet
           MONITOR_OUTPUT_DIR: badges
         run: bun run monitor
 
@@ -45,96 +45,53 @@ jobs:
           publish_dir: badges
           keep_files: false
 
-      - name: Download previous status
+      - name: Parse monitor status
         if: always()
-        continue-on-error: true
+        id: parse_status
         run: |
-          mkdir -p previous
-          curl -f -o previous/status.json https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/status.json || echo "No previous status found"
-
-      - name: Check for status changes
-        if: always()
-        id: status_check
-        run: |
-          # Debug: Show what we have
-          echo "=== Debug: Current status.json ==="
-          if [ -f badges/status.json ]; then
-            cat badges/status.json || echo "Failed to read badges/status.json"
-          else
-            echo "badges/status.json does not exist"
-          fi
-          echo "==================================="
-
-          # Parse current status
-          CURRENT_STATUS="unknown"
-          CURRENT_FAILED_STAGES=""
-          if [ -f badges/status.json ] && [ -s badges/status.json ]; then
-            if grep -q '"failed"' badges/status.json; then
-              CURRENT_STATUS="failed"
-              CURRENT_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' badges/status.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
-            elif grep -q '"success"' badges/status.json; then
-              CURRENT_STATUS="success"
-            fi
+          # Parse the detailed monitor status
+          if [ ! -f badges/monitor-status.json ]; then
+            echo "monitor-status.json not found"
+            exit 0
           fi
 
-          # Parse previous status
-          PREVIOUS_STATUS="unknown"
-          PREVIOUS_FAILED_STAGES=""
-          PREVIOUS_FILE_EXISTS="false"
-          if [ -f previous/status.json ] && [ -s previous/status.json ]; then
-            PREVIOUS_FILE_EXISTS="true"
-            if grep -q '"failed"' previous/status.json; then
-              PREVIOUS_STATUS="failed"
-              PREVIOUS_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' previous/status.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
-            elif grep -q '"success"' previous/status.json; then
-              PREVIOUS_STATUS="success"
-            fi
-          fi
+          # Show what we have
+          echo "=== Monitor Status ==="
+          cat badges/monitor-status.json
+          echo "====================="
 
-          # Determine if this is effectively a first run
-          # First run = no previous file OR previous is unknown but current has valid status
-          FIRST_RUN="false"
-          if [ "$PREVIOUS_FILE_EXISTS" = "false" ]; then
-            FIRST_RUN="true"
-          elif [ "$PREVIOUS_STATUS" = "unknown" ] && [ "$CURRENT_STATUS" != "unknown" ]; then
-            FIRST_RUN="true"
-          fi
-
-          # Determine if status changed
-          STATUS_CHANGED="false"
+          # Extract key information
+          OVERALL=$(jq -r '.overall' badges/monitor-status.json)
+          PASSED=$(jq -r '.summary.passed' badges/monitor-status.json)
+          FAILED=$(jq -r '.summary.failed' badges/monitor-status.json)
+          SKIPPED=$(jq -r '.summary.skipped' badges/monitor-status.json)
+          TOTAL=$(jq -r '.summary.total' badges/monitor-status.json)
           
-          # Always notify on first meaningful run
-          if [ "$FIRST_RUN" = "true" ] && [ "$CURRENT_STATUS" != "unknown" ]; then
-            STATUS_CHANGED="true"
-            echo "First run with valid status detected - will notify"
-          # Notify if status changed (and not both unknown)
-          elif [ "$CURRENT_STATUS" != "$PREVIOUS_STATUS" ] && ! ([ "$CURRENT_STATUS" = "unknown" ] && [ "$PREVIOUS_STATUS" = "unknown" ]); then
-            STATUS_CHANGED="true"
-          # Notify if failed stages changed
-          elif [ "$CURRENT_STATUS" = "failed" ] && [ "$CURRENT_FAILED_STAGES" != "$PREVIOUS_FAILED_STAGES" ]; then
-            STATUS_CHANGED="true"
-          fi
+          # Get failed stages
+          FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .name' badges/monitor-status.json | tr '\n' ',' | sed 's/,$//')
+          
+          # Get passed stages
+          PASSED_STAGES=$(jq -r '.stages[] | select(.status == "passed") | .name' badges/monitor-status.json | tr '\n' ',' | sed 's/,$//')
 
-          echo "current_status=$CURRENT_STATUS" >> $GITHUB_OUTPUT
-          echo "previous_status=$PREVIOUS_STATUS" >> $GITHUB_OUTPUT
-          echo "status_changed=$STATUS_CHANGED" >> $GITHUB_OUTPUT
-          echo "current_failed_stages=$CURRENT_FAILED_STAGES" >> $GITHUB_OUTPUT
-          echo "previous_failed_stages=$PREVIOUS_FAILED_STAGES" >> $GITHUB_OUTPUT
-          echo "first_run=$FIRST_RUN" >> $GITHUB_OUTPUT
-
-          echo "First run: $FIRST_RUN"
-          echo "Current: $CURRENT_STATUS (failed stages: $CURRENT_FAILED_STAGES)"
-          echo "Previous: $PREVIOUS_STATUS (failed stages: $PREVIOUS_FAILED_STAGES)"
-          echo "Status changed: $STATUS_CHANGED"
+          echo "overall=$OVERALL" >> $GITHUB_OUTPUT
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "failed_stages=$FAILED_STAGES" >> $GITHUB_OUTPUT
+          echo "passed_stages=$PASSED_STAGES" >> $GITHUB_OUTPUT
 
       - name: Send Slack notification
-        if: always() && steps.status_check.outputs.status_changed == 'true'
+        if: always()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          CURRENT_STATUS: ${{ steps.status_check.outputs.current_status }}
-          PREVIOUS_STATUS: ${{ steps.status_check.outputs.previous_status }}
-          CURRENT_FAILED: ${{ steps.status_check.outputs.current_failed_stages }}
-          PREVIOUS_FAILED: ${{ steps.status_check.outputs.previous_failed_stages }}
+          OVERALL: ${{ steps.parse_status.outputs.overall }}
+          PASSED: ${{ steps.parse_status.outputs.passed }}
+          FAILED: ${{ steps.parse_status.outputs.failed }}
+          SKIPPED: ${{ steps.parse_status.outputs.skipped }}
+          TOTAL: ${{ steps.parse_status.outputs.total }}
+          FAILED_STAGES: ${{ steps.parse_status.outputs.failed_stages }}
+          PASSED_STAGES: ${{ steps.parse_status.outputs.passed_stages }}
         run: |
           # Skip if webhook URL is not configured
           if [ -z "$SLACK_WEBHOOK_URL" ]; then
@@ -142,75 +99,71 @@ jobs:
             exit 0
           fi
 
+          # Skip if status wasn't parsed (monitor didn't run)
+          if [ -z "$OVERALL" ]; then
+            echo "No monitor status to report"
+            exit 0
+          fi
+
           # Determine emoji and color
-          if [ "$CURRENT_STATUS" = "success" ]; then
+          if [ "$OVERALL" = "success" ]; then
             EMOJI="✅"
             COLOR="good"
-            STATUS_TEXT="All checks passing"
-          elif [ "$CURRENT_STATUS" = "failed" ]; then
+            TITLE="All Checks Passed"
+          else
             EMOJI="❌"
             COLOR="danger"
-            STATUS_TEXT="Some checks failed"
-          else
-            EMOJI="⚠️"
-            COLOR="warning"
-            STATUS_TEXT="Status unknown"
+            TITLE="Some Checks Failed"
           fi
 
-          # Build status change message
-          if [ "$PREVIOUS_STATUS" = "unknown" ] && [ "$CURRENT_STATUS" = "unknown" ]; then
-            CHANGE_TEXT="🆕 Initial run - Monitor setup complete"
-          elif [ "$PREVIOUS_STATUS" = "unknown" ]; then
-            CHANGE_TEXT="🆕 Initial run - Status: $CURRENT_STATUS"
-          elif [ "$PREVIOUS_STATUS" = "success" ] && [ "$CURRENT_STATUS" = "failed" ]; then
-            CHANGE_TEXT="🔴 Status degraded: Success → Failed"
-          elif [ "$PREVIOUS_STATUS" = "failed" ] && [ "$CURRENT_STATUS" = "success" ]; then
-            CHANGE_TEXT="🟢 Status recovered: Failed → Success"
-          elif [ "$PREVIOUS_STATUS" = "failed" ] && [ "$CURRENT_STATUS" = "failed" ]; then
-            CHANGE_TEXT="⚠️ Failed stages changed"
-          else
-            CHANGE_TEXT="Status changed: $PREVIOUS_STATUS → $CURRENT_STATUS"
+          # Build summary
+          SUMMARY="$PASSED/$TOTAL passed"
+          if [ "$FAILED" != "0" ]; then
+            SUMMARY="$SUMMARY, $FAILED failed"
+          fi
+          if [ "$SKIPPED" != "0" ]; then
+            SUMMARY="$SUMMARY, $SKIPPED skipped"
           fi
 
-          # Build failed stages message
-          FAILED_MSG=""
-          if [ -n "$CURRENT_FAILED" ]; then
-            FAILED_MSG="\n*Failed stages:* $CURRENT_FAILED"
+          # Build stage details
+          DETAILS=""
+          if [ -n "$PASSED_STAGES" ]; then
+            DETAILS="✅ *Passed:* $PASSED_STAGES"
           fi
-
-          # Build comparison if both had failures
-          COMPARISON=""
-          if [ -n "$PREVIOUS_FAILED" ] && [ -n "$CURRENT_FAILED" ]; then
-            COMPARISON="\n*Previously failed:* $PREVIOUS_FAILED"
+          if [ -n "$FAILED_STAGES" ]; then
+            if [ -n "$DETAILS" ]; then
+              DETAILS="$DETAILS\n"
+            fi
+            DETAILS="${DETAILS}❌ *Failed:* $FAILED_STAGES"
           fi
 
           # Send to Slack
           curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"$EMOJI Testnet Sentinel - Status Change\",
+              \"text\": \"$EMOJI Testnet Sentinel - $TITLE\",
               \"attachments\": [
                 {
                   \"color\": \"$COLOR\",
                   \"fields\": [
                     {
-                      \"title\": \"Change\",
-                      \"value\": \"$CHANGE_TEXT\",
+                      \"title\": \"Summary\",
+                      \"value\": \"$SUMMARY\",
                       \"short\": false
                     },
                     {
-                      \"title\": \"Current Status\",
-                      \"value\": \"$STATUS_TEXT$FAILED_MSG$COMPARISON\",
+                      \"title\": \"Stage Results\",
+                      \"value\": \"$DETAILS\",
                       \"short\": false
                     },
                     {
                       \"title\": \"Network\",
-                      \"value\": \"Testnet\",
+                      \"value\": \"Stagenet\",
                       \"short\": true
                     },
                     {
-                      \"title\": \"Run\",
-                      \"value\": \"<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>\",
+                      \"title\": \"Run Details\",
+                      \"value\": \"<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
                       \"short\": true
                     }
                   ],
