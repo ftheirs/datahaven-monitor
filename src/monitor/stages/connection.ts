@@ -61,4 +61,3 @@ export async function connectionStage(ctx: MonitorContext): Promise<void> {
 
 	console.log("[connection] ✓ All clients connected successfully");
 }
-

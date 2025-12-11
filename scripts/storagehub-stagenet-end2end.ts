@@ -13,12 +13,7 @@ import {
 import { FileManager as FM } from "@storagehub-sdk/core";
 import type { Session, FileTree } from "@storagehub-sdk/msp-client";
 import { MspClient } from "@storagehub-sdk/msp-client";
-import {
-	createReadStream,
-	createWriteStream,
-	existsSync,
-	statSync,
-} from "fs";
+import { createReadStream, createWriteStream, existsSync, statSync } from "fs";
 import { Readable } from "stream";
 import {
 	createPublicClient,
@@ -46,7 +41,8 @@ async function main() {
 		},
 	};
 
-	const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+	const sleep = (ms: number) =>
+		new Promise((resolve) => setTimeout(resolve, ms));
 	const extractPeerId = (multiaddresses: string[]): string | undefined => {
 		for (const ma of multiaddresses) {
 			const idx = ma.lastIndexOf("/p2p/");
@@ -125,8 +121,7 @@ async function main() {
 	const createRcpt = await publicClient.waitForTransactionReceipt({
 		hash: createTx,
 	});
-	if (createRcpt.status !== "success")
-		throw new Error("createBucket failed");
+	if (createRcpt.status !== "success") throw new Error("createBucket failed");
 
 	console.log(`✓ Bucket created: ${bucketId}`);
 
@@ -229,8 +224,7 @@ async function main() {
 
 	const delTx = await storageHubClient.requestDeleteFile(coreInfo);
 	const delRcpt = await publicClient.waitForTransactionReceipt({ hash: delTx });
-	if (delRcpt.status !== "success")
-		throw new Error("requestDeleteFile failed");
+	if (delRcpt.status !== "success") throw new Error("requestDeleteFile failed");
 	console.log("✓ File deletion requested");
 
 	// Wait for file to disappear
@@ -281,4 +275,3 @@ main().catch((err) => {
 	console.error("❌ End-to-end flow failed:", err);
 	process.exitCode = 1;
 });
-

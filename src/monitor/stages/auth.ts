@@ -31,4 +31,3 @@ export async function authStage(ctx: MonitorContext): Promise<void> {
 
 	console.log(`[auth] ✓ Authenticated as ${profile.address}`);
 }
-

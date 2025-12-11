@@ -50,7 +50,9 @@ async function runStage(
 		const duration = Date.now() - startTime;
 		const errorMsg = error instanceof Error ? error.message : String(error);
 		results.push({ stage: name, status: "failed", error: errorMsg, duration });
-		console.log(`[monitor] ✗ Stage ${name} failed (${duration}ms): ${errorMsg}`);
+		console.log(
+			`[monitor] ✗ Stage ${name} failed (${duration}ms): ${errorMsg}`,
+		);
 		return false;
 	}
 }
@@ -167,7 +169,12 @@ export async function runMonitor(): Promise<void> {
 		console.log("Monitor Summary");
 		console.log("=".repeat(80));
 		for (const result of results) {
-			const icon = result.status === "passed" ? "✓" : result.status === "failed" ? "✗" : "○";
+			const icon =
+				result.status === "passed"
+					? "✓"
+					: result.status === "failed"
+						? "✗"
+						: "○";
 			const status = result.status.padEnd(10);
 			const duration = `${result.duration}ms`.padStart(8);
 			console.log(`${icon} ${result.stage.padEnd(20)} ${status} ${duration}`);
@@ -194,4 +201,3 @@ if (import.meta.main) {
 		process.exit(1);
 	});
 }
-

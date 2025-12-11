@@ -114,7 +114,9 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 	console.log(
 		`[storage-request] Waiting for MSP to process (${ctx.network.delays.postStorageRequestMs / 1000}s)...`,
 	);
-	await new Promise((r) => setTimeout(r, ctx.network.delays.postStorageRequestMs));
+	await new Promise((r) =>
+		setTimeout(r, ctx.network.delays.postStorageRequestMs),
+	);
 
 	console.log("[storage-request] ✓ Storage request issued and verified");
 }
@@ -126,4 +128,3 @@ function extractPeerId(multiaddresses: string[]): string | undefined {
 	}
 	return undefined;
 }
-

@@ -99,4 +99,3 @@ export async function fileDeleteStage(ctx: MonitorContext): Promise<void> {
 
 	console.log(`[file-delete] ✓ File deleted and removed from bucket`);
 }
-

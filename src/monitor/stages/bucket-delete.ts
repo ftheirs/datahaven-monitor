@@ -57,4 +57,3 @@ export async function bucketDeleteStage(ctx: MonitorContext): Promise<void> {
 
 	console.log(`[bucket-delete] ✓ Bucket deleted: ${ctx.bucketId}`);
 }
-

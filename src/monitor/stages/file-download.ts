@@ -68,7 +68,8 @@ export async function fileDownloadStage(ctx: MonitorContext): Promise<void> {
 		);
 	}
 
-	console.log(`[file-download] ✓ Fingerprint verified: ${downloadedFingerprintHex}`);
+	console.log(
+		`[file-download] ✓ Fingerprint verified: ${downloadedFingerprintHex}`,
+	);
 	console.log(`[file-download] ✓ File downloaded and verified successfully`);
 }
-

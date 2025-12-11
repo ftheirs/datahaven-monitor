@@ -55,4 +55,3 @@ export type MonitorContext = {
  * Stage function signature
  */
 export type StageFunction = (ctx: MonitorContext) => Promise<void>;
-

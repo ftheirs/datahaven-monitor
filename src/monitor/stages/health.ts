@@ -19,4 +19,3 @@ export async function healthStage(ctx: MonitorContext): Promise<void> {
 
 	console.log("[health] ✓ MSP is healthy");
 }
-

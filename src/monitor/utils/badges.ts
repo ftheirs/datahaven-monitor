@@ -62,7 +62,8 @@ export async function generateBadges(
 	const summaryBadge: BadgeEndpoint = {
 		schemaVersion: 1,
 		label: "Monitor Status",
-		message: failed > 0 ? `${failed}/${total} failed` : `${passed}/${total} passed`,
+		message:
+			failed > 0 ? `${failed}/${total} failed` : `${passed}/${total} passed`,
 		color: failed > 0 ? "red" : "brightgreen",
 		cacheSeconds: 300,
 	};
@@ -72,4 +73,3 @@ export async function generateBadges(
 		JSON.stringify(summaryBadge, null, 2) + "\n",
 	);
 }
-
