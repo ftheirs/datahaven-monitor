@@ -57,6 +57,18 @@ Badges are generated as [Shields.io endpoint JSON](https://shields.io/endpoint) 
 
 Badges update every 15 minutes via GitHub Actions.
 
+### Slack Notifications
+
+The monitor supports **smart Slack notifications** with change detection:
+- 🔴 Alerts when status degrades (passing → failing)
+- 🟢 Alerts when status recovers (failing → passing)
+- 📊 Visual grid showing all stage results
+- 🔕 No spam - only notifies on status changes
+
+The monitor runs every 15 minutes but only sends notifications when something changes, preventing alert fatigue while ensuring you're immediately informed of issues and recoveries.
+
+**Setup**: See [SLACK_SETUP.md](./SLACK_SETUP.md) for detailed instructions.
+
 ### Technology
 
 - **Runtime**: Bun + TypeScript

@@ -45,7 +45,16 @@ jobs:
           publish_dir: badges
           keep_files: false
 
-      - name: Parse monitor status
+      - name: Download previous status from GitHub Pages
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "Downloading previous monitor status from GitHub Pages..."
+          curl -f -o previous-monitor-status.json \
+            https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/monitor-status.json \
+            || echo "No previous status found (this might be the first run)"
+
+      - name: Parse monitor status and detect changes
         if: always()
         id: parse_status
         run: |
@@ -56,12 +65,12 @@ jobs:
           fi
 
           # Show what we have
-          echo "=== Monitor Status ==="
+          echo "=== Current Monitor Status ==="
           cat badges/monitor-status.json
-          echo "====================="
+          echo "=============================="
 
-          # Extract key information
-          OVERALL=$(jq -r '.overall' badges/monitor-status.json)
+          # Extract current status
+          CURRENT_OVERALL=$(jq -r '.overall' badges/monitor-status.json)
           PASSED=$(jq -r '.summary.passed' badges/monitor-status.json)
           FAILED=$(jq -r '.summary.failed' badges/monitor-status.json)
           SKIPPED=$(jq -r '.summary.skipped' badges/monitor-status.json)
@@ -73,19 +82,60 @@ jobs:
           # Get passed stages
           PASSED_STAGES=$(jq -r '.stages[] | select(.status == "passed") | .name' badges/monitor-status.json | tr '\n' ',' | sed 's/,$//')
 
-          echo "overall=$OVERALL" >> $GITHUB_OUTPUT
+          # Extract previous status if it exists
+          PREVIOUS_OVERALL="unknown"
+          STATUS_CHANGED="true"  # Default to true (notify on first run)
+          CHANGE_TYPE="initial"
+          
+          if [ -f previous-monitor-status.json ] && [ -s previous-monitor-status.json ]; then
+            echo ""
+            echo "=== Previous Monitor Status ==="
+            cat previous-monitor-status.json
+            echo "==============================="
+            echo ""
+            
+            PREVIOUS_OVERALL=$(jq -r '.overall' previous-monitor-status.json 2>/dev/null || echo "unknown")
+            
+            # Compare statuses
+            if [ "$CURRENT_OVERALL" = "$PREVIOUS_OVERALL" ]; then
+              STATUS_CHANGED="false"
+              echo "✓ Status unchanged: $CURRENT_OVERALL"
+            else
+              STATUS_CHANGED="true"
+              if [ "$PREVIOUS_OVERALL" = "success" ] && [ "$CURRENT_OVERALL" = "failed" ]; then
+                CHANGE_TYPE="degraded"
+                echo "⚠️ Status degraded: success → failed"
+              elif [ "$PREVIOUS_OVERALL" = "failed" ] && [ "$CURRENT_OVERALL" = "success" ]; then
+                CHANGE_TYPE="recovered"
+                echo "✓ Status recovered: failed → success"
+              else
+                CHANGE_TYPE="changed"
+                echo "ℹ️ Status changed: $PREVIOUS_OVERALL → $CURRENT_OVERALL"
+              fi
+            fi
+          else
+            echo "ℹ️ No previous status found - this is the first run or initial setup"
+          fi
+
+          # Output all variables
+          echo "overall=$CURRENT_OVERALL" >> $GITHUB_OUTPUT
+          echo "previous_overall=$PREVIOUS_OVERALL" >> $GITHUB_OUTPUT
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
           echo "failed_stages=$FAILED_STAGES" >> $GITHUB_OUTPUT
           echo "passed_stages=$PASSED_STAGES" >> $GITHUB_OUTPUT
+          echo "status_changed=$STATUS_CHANGED" >> $GITHUB_OUTPUT
+          echo "change_type=$CHANGE_TYPE" >> $GITHUB_OUTPUT
 
       - name: Send Slack notification
-        if: always()
+        if: always() && steps.parse_status.outputs.status_changed == 'true'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           OVERALL: ${{ steps.parse_status.outputs.overall }}
+          PREVIOUS_OVERALL: ${{ steps.parse_status.outputs.previous_overall }}
+          CHANGE_TYPE: ${{ steps.parse_status.outputs.change_type }}
           PASSED: ${{ steps.parse_status.outputs.passed }}
           FAILED: ${{ steps.parse_status.outputs.failed }}
           SKIPPED: ${{ steps.parse_status.outputs.skipped }}
@@ -104,16 +154,42 @@ jobs:
             echo "No monitor status to report"
             exit 0
           fi
+          
+          echo "📢 Status changed! Sending Slack notification..."
+          echo "   Previous: $PREVIOUS_OVERALL"
+          echo "   Current: $OVERALL"
+          echo "   Change type: $CHANGE_TYPE"
 
-          # Determine emoji and color
-          if [ "$OVERALL" = "success" ]; then
-            EMOJI="✅"
+          # Determine emoji, color, and title based on change type
+          if [ "$CHANGE_TYPE" = "recovered" ]; then
+            EMOJI="🟢"
             COLOR="good"
-            TITLE="All Checks Passed"
-          else
-            EMOJI="❌"
+            TITLE="Status Recovered - All Checks Passed"
+          elif [ "$CHANGE_TYPE" = "degraded" ]; then
+            EMOJI="🔴"
             COLOR="danger"
-            TITLE="Some Checks Failed"
+            TITLE="Status Degraded - Checks Failed"
+          elif [ "$CHANGE_TYPE" = "initial" ]; then
+            if [ "$OVERALL" = "success" ]; then
+              EMOJI="✅"
+              COLOR="good"
+              TITLE="Monitor Started - All Checks Passed"
+            else
+              EMOJI="❌"
+              COLOR="danger"
+              TITLE="Monitor Started - Some Checks Failed"
+            fi
+          else
+            # Generic change
+            if [ "$OVERALL" = "success" ]; then
+              EMOJI="✅"
+              COLOR="good"
+              TITLE="All Checks Passed"
+            else
+              EMOJI="❌"
+              COLOR="danger"
+              TITLE="Some Checks Failed"
+            fi
           fi
 
           # Build summary
