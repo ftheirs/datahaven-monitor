@@ -117,7 +117,7 @@ jobs:
           fi
 
           # Build summary
-          SUMMARY="$PASSED/$TOTAL passed"
+          SUMMARY="📊 Status: $PASSED/$TOTAL passed"
           if [ "$FAILED" != "0" ]; then
             SUMMARY="$SUMMARY, $FAILED failed"
           fi
@@ -125,16 +125,88 @@ jobs:
             SUMMARY="$SUMMARY, $SKIPPED skipped"
           fi
 
-          # Build stage details
-          DETAILS=""
-          if [ -n "$PASSED_STAGES" ]; then
-            DETAILS="✅ *Passed:* $PASSED_STAGES"
-          fi
-          if [ -n "$FAILED_STAGES" ]; then
-            if [ -n "$DETAILS" ]; then
-              DETAILS="$DETAILS\n"
+          # Build stage grid (3 columns)
+          # Parse all stages from monitor-status.json
+          STAGES_JSON=$(cat badges/monitor-status.json | jq -c '.stages[]')
+          
+          GRID=""
+          COL_COUNT=0
+          
+          echo "$STAGES_JSON" | while IFS= read -r stage; do
+            NAME=$(echo "$stage" | jq -r '.name')
+            STATUS=$(echo "$stage" | jq -r '.status')
+            
+            # Format stage name (capitalize and add spaces)
+            DISPLAY_NAME=$(echo "$NAME" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+            
+            # Add appropriate icon
+            if [ "$STATUS" = "passed" ]; then
+              ICON="✓"
+            elif [ "$STATUS" = "failed" ]; then
+              ICON="✗"
+            else
+              ICON="○"
             fi
-            DETAILS="${DETAILS}❌ *Failed:* $FAILED_STAGES"
+            
+            # Pad name to ~15 chars for alignment
+            printf -v PADDED_NAME "%-15s" "$DISPLAY_NAME"
+            
+            GRID="$GRID$ICON $PADDED_NAME"
+            COL_COUNT=$((COL_COUNT + 1))
+            
+            # New row after 3 columns
+            if [ $COL_COUNT -eq 3 ]; then
+              GRID="$GRID\n"
+              COL_COUNT=0
+            else
+              GRID="$GRID "
+            fi
+          done > /tmp/stage_grid.txt
+          
+          GRID=$(cat /tmp/stage_grid.txt)
+          
+          # If we have detailed monitor status, use the grid
+          if [ -s badges/monitor-status.json ]; then
+            # Create grid manually from known stages
+            GRID=""
+            for stage_name in connection health auth bucket-create storage-request file-upload file-download file-delete bucket-delete; do
+              # Check if stage passed or failed
+              stage_status=$(jq -r ".stages[] | select(.name == \"$stage_name\") | .status" badges/monitor-status.json 2>/dev/null)
+              
+              if [ "$stage_status" = "passed" ]; then
+                icon="✓"
+              elif [ "$stage_status" = "failed" ]; then
+                icon="✗"
+              else
+                icon="○"
+              fi
+              
+              # Format display name
+              case "$stage_name" in
+                "connection") display="Connection   " ;;
+                "health") display="Health       " ;;
+                "auth") display="Auth         " ;;
+                "bucket-create") display="Bucket Create" ;;
+                "storage-request") display="Storage Req  " ;;
+                "file-upload") display="File Upload  " ;;
+                "file-download") display="File Download" ;;
+                "file-delete") display="File Delete  " ;;
+                "bucket-delete") display="Bucket Delete" ;;
+              esac
+              
+              GRID="${GRID}${icon} ${display}    "
+              
+              # Add newline after every 3 stages
+              case "$stage_name" in
+                "auth"|"file-upload"|"bucket-delete") GRID="${GRID}\n" ;;
+              esac
+            done
+          else
+            # Fallback to simple list if no detailed status
+            GRID="✅ *Passed:* $PASSED_STAGES"
+            if [ -n "$FAILED_STAGES" ]; then
+              GRID="$GRID\n❌ *Failed:* $FAILED_STAGES"
+            fi
           fi
 
           # Send to Slack
@@ -153,18 +225,13 @@ jobs:
                     },
                     {
                       \"title\": \"Stage Results\",
-                      \"value\": \"$DETAILS\",
+                      \"value\": \"$GRID\",
                       \"short\": false
                     },
                     {
-                      \"title\": \"Network\",
-                      \"value\": \"Stagenet\",
-                      \"short\": true
-                    },
-                    {
-                      \"title\": \"Run Details\",
-                      \"value\": \"<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
-                      \"short\": true
+                      \"title\": \"Info\",
+                      \"value\": \"Network: Stagenet | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
+                      \"short\": false
                     }
                   ],
                   \"footer\": \"Testnet Sentinel\",
