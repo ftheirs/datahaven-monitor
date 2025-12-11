@@ -100,7 +100,7 @@ jobs:
           echo "Status changed: $STATUS_CHANGED"
 
       - name: Send Slack notification
-        if: always() && steps.status_check.outputs.status_changed == 'true' && secrets.SLACK_WEBHOOK_URL != ''
+        if: always() && steps.status_check.outputs.status_changed == 'true'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           CURRENT_STATUS: ${{ steps.status_check.outputs.current_status }}
@@ -108,6 +108,12 @@ jobs:
           CURRENT_FAILED: ${{ steps.status_check.outputs.current_failed_stages }}
           PREVIOUS_FAILED: ${{ steps.status_check.outputs.previous_failed_stages }}
         run: |
+          # Skip if webhook URL is not configured
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL not configured, skipping notification"
+            exit 0
+          fi
+
           # Determine emoji and color
           if [ "$CURRENT_STATUS" = "success" ]; then
             EMOJI="✅"
