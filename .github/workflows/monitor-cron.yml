@@ -71,6 +71,7 @@ jobs:
           # Parse previous status
           PREVIOUS_STATUS="unknown"
           PREVIOUS_FAILED_STAGES=""
+          FIRST_RUN="false"
           if [ -f previous/status.json ]; then
             if grep -q '"failed"' previous/status.json; then
               PREVIOUS_STATUS="failed"
@@ -78,14 +79,23 @@ jobs:
             elif grep -q '"success"' previous/status.json; then
               PREVIOUS_STATUS="success"
             fi
+          else
+            # No previous status file found - this is the first run
+            FIRST_RUN="true"
           fi
 
           # Determine if status changed
           STATUS_CHANGED="false"
-          if [ "$CURRENT_STATUS" != "$PREVIOUS_STATUS" ]; then
+          
+          # Always notify on first run (no previous status available)
+          if [ "$FIRST_RUN" = "true" ]; then
             STATUS_CHANGED="true"
+            echo "First run detected - will notify"
+          # Notify if status changed
+          elif [ "$CURRENT_STATUS" != "$PREVIOUS_STATUS" ]; then
+            STATUS_CHANGED="true"
+          # Notify if failed stages changed
           elif [ "$CURRENT_STATUS" = "failed" ] && [ "$CURRENT_FAILED_STAGES" != "$PREVIOUS_FAILED_STAGES" ]; then
-            # Failed stages changed
             STATUS_CHANGED="true"
           fi
 
@@ -94,7 +104,9 @@ jobs:
           echo "status_changed=$STATUS_CHANGED" >> $GITHUB_OUTPUT
           echo "current_failed_stages=$CURRENT_FAILED_STAGES" >> $GITHUB_OUTPUT
           echo "previous_failed_stages=$PREVIOUS_FAILED_STAGES" >> $GITHUB_OUTPUT
+          echo "first_run=$FIRST_RUN" >> $GITHUB_OUTPUT
 
+          echo "First run: $FIRST_RUN"
           echo "Current: $CURRENT_STATUS (failed stages: $CURRENT_FAILED_STAGES)"
           echo "Previous: $PREVIOUS_STATUS (failed stages: $PREVIOUS_FAILED_STAGES)"
           echo "Status changed: $STATUS_CHANGED"
@@ -130,8 +142,10 @@ jobs:
           fi
 
           # Build status change message
-          if [ "$PREVIOUS_STATUS" = "unknown" ]; then
-            CHANGE_TEXT="Initial run"
+          if [ "$PREVIOUS_STATUS" = "unknown" ] && [ "$CURRENT_STATUS" = "unknown" ]; then
+            CHANGE_TEXT="🆕 Initial run - Monitor setup complete"
+          elif [ "$PREVIOUS_STATUS" = "unknown" ]; then
+            CHANGE_TEXT="🆕 Initial run - Status: $CURRENT_STATUS"
           elif [ "$PREVIOUS_STATUS" = "success" ] && [ "$CURRENT_STATUS" = "failed" ]; then
             CHANGE_TEXT="🔴 Status degraded: Success → Failed"
           elif [ "$PREVIOUS_STATUS" = "failed" ] && [ "$CURRENT_STATUS" = "success" ]; then
@@ -139,7 +153,7 @@ jobs:
           elif [ "$PREVIOUS_STATUS" = "failed" ] && [ "$CURRENT_STATUS" = "failed" ]; then
             CHANGE_TEXT="⚠️ Failed stages changed"
           else
-            CHANGE_TEXT="Status changed"
+            CHANGE_TEXT="Status changed: $PREVIOUS_STATUS → $CURRENT_STATUS"
           fi
 
           # Build failed stages message
