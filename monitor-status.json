@@ -1,57 +1,58 @@
 {
-  "timestamp": "2025-12-11T18:40:02.065Z",
-  "overall": "success",
+  "timestamp": "2025-12-11T19:02:27.403Z",
+  "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 9,
-    "failed": 0,
-    "skipped": 0
+    "passed": 7,
+    "failed": 1,
+    "skipped": 1
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 1824
+      "duration": 1620
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 459
+      "duration": 363
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 792
+      "duration": 589
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 23707
+      "duration": 23202
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 33893
+      "duration": 33898
     },
     {
       "name": "file-upload",
       "status": "passed",
-      "duration": 38318
+      "duration": 38301
     },
     {
       "name": "file-download",
       "status": "passed",
-      "duration": 514
+      "duration": 532
     },
     {
       "name": "file-delete",
-      "status": "passed",
-      "duration": 119634
+      "status": "failed",
+      "duration": 588,
+      "error": "The contract function \"requestDeleteFile\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  requestDeleteFile((bytes32 fileKey, uint8 operation), bytes signature, bytes32 bucketId, bytes location, uint64 size, bytes32 fingerprint)\n  args:                       ([\"0x1d50895590b6a8be1c967e9f41fb26c227f76189d6f5140e6b18458893c4eadb\",0], 0xf13ae44d3a98c5b8fa24381b2db54d0d6deba337fcb43c3e89da898b9da655341b5a3b83cb52fd1b48e228760af5f43b92ac8a3cd05306c62797685896a6331f1c, 0x07c8c7e6485367c58617bacca8b3dbf1738e02d7eab9cb5fee6c1785d4fe6f09, 0x61646f6c706875732e6a7067, 416400, 0x34eb5f637e05fc18f857ccb013250076534192189894d174ee3aa6d3525f6970)\n  sender:    0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     },
     {
       "name": "bucket-delete",
-      "status": "passed",
-      "duration": 35548
+      "status": "skipped",
+      "duration": 0
     }
   ]
 }
