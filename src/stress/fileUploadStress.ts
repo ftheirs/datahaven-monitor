@@ -407,7 +407,8 @@ export async function runFileUploadStress(
 		let deleted = 0;
 
 		const MAX_DELETE_RETRIES = 3;
-		const RETRY_DELAY_MS = 30_000;
+		// Progressive backoff: 30s, 60s, 90s between retry attempts
+		const RETRY_DELAYS_MS = [30_000, 60_000, 90_000];
 
 		// Start with all files that have fileKeys
 		let filesToDelete = files.filter((f) => f.fileKey);
@@ -489,10 +490,11 @@ export async function runFileUploadStress(
 
 			// If there are more attempts and files to retry, wait before next attempt
 			if (attempt < MAX_DELETE_RETRIES && filesToDelete.length > 0) {
+				const nextDelay = RETRY_DELAYS_MS[attempt - 1]; // Progressive backoff
 				console.log(
-					`[stress] Waiting ${RETRY_DELAY_MS / 1000}s before retry (${filesToDelete.length} files remaining)...`,
+					`[stress] Waiting ${nextDelay / 1000}s before retry (${filesToDelete.length} files remaining)...`,
 				);
-				await sleep(RETRY_DELAY_MS);
+				await sleep(nextDelay);
 			}
 		}
 
