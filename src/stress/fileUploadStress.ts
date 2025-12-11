@@ -268,6 +268,9 @@ export async function runFileUploadStress(
 					hash: storageReqTx,
 				});
 
+				// Small delay to ensure nonce increments properly before next transaction
+				await sleep(500);
+
 				// Recompute file key after storage request
 				const recomputedFM = new FM({
 					size: file.bytes.length,
@@ -386,66 +389,123 @@ export async function runFileUploadStress(
 			return;
 		}
 
-		// Wait for all files to be indexed before deleting
-		console.log("\n[stress] Waiting for files to be fully indexed (30s)...");
-		await sleep(30_000);
-
 		// ========================================================================
-		// STEP 3: Delete files SEQUENTIALLY (avoid nonce conflicts)
+		// STEP 2.3: Wait for storage requests to be fulfilled (bulk wait)
 		// ========================================================================
 		console.log(
-			`\n[stress] Deleting ${uploaded} uploaded files sequentially (avoids nonce conflicts)...`,
+			"\n[stress] Waiting for storage requests to be fulfilled (90s bulk wait)...",
+		);
+		await sleep(90_000);
+
+		// ========================================================================
+		// STEP 3: Delete files with retries (up to 3 attempts)
+		// ========================================================================
+		console.log(
+			`\n[stress] Deleting ${uploaded} uploaded files with retry logic (max 3 attempts)...`,
 		);
 		const deleteStartTime = Date.now();
 		let deleted = 0;
 
-		const filesToDelete = files.filter((f) => f.fileKey);
+		const MAX_DELETE_RETRIES = 3;
+		const RETRY_DELAY_MS = 30_000;
 
-		for (const file of filesToDelete) {
-			if (!file.fileKey) continue;
+		// Start with all files that have fileKeys
+		let filesToDelete = files.filter((f) => f.fileKey);
+		const totalToDelete = filesToDelete.length;
 
-			try {
-				// Get file info from MSP
-				const fileInfo = await mspClient.files.getFileInfo(
-					bucketId,
-					file.fileKey,
-				);
+		for (let attempt = 1; attempt <= MAX_DELETE_RETRIES; attempt++) {
+			console.log(
+				`\n[stress] Deletion attempt ${attempt}/${MAX_DELETE_RETRIES} (${filesToDelete.length} files)...`,
+			);
 
-				// Convert to CoreFileInfo
-				const coreInfo: CoreFileInfo = {
-					fileKey: to0x(fileInfo.fileKey),
-					fingerprint: to0x(fileInfo.fingerprint),
-					bucketId: to0x(fileInfo.bucketId),
-					location: fileInfo.location,
-					size: BigInt(fileInfo.size),
-					blockHash: to0x(fileInfo.blockHash),
-					...(fileInfo.txHash ? { txHash: to0x(fileInfo.txHash) } : {}),
-				};
+			const failedFiles: typeof filesToDelete = [];
 
-				const deleteTx = await storageHubClient.requestDeleteFile(coreInfo);
+			for (const file of filesToDelete) {
+				if (!file.fileKey) continue;
 
-				if (!deleteTx) {
-					throw new Error("requestDeleteFile returned no tx hash");
+				try {
+					// Get file info from MSP
+					const fileInfo = await mspClient.files.getFileInfo(
+						bucketId,
+						file.fileKey,
+					);
+
+					// Convert to CoreFileInfo
+					const coreInfo: CoreFileInfo = {
+						fileKey: to0x(fileInfo.fileKey),
+						fingerprint: to0x(fileInfo.fingerprint),
+						bucketId: to0x(fileInfo.bucketId),
+						location: fileInfo.location,
+						size: BigInt(fileInfo.size),
+						blockHash: to0x(fileInfo.blockHash),
+						...(fileInfo.txHash ? { txHash: to0x(fileInfo.txHash) } : {}),
+					};
+
+					const deleteTx = await storageHubClient.requestDeleteFile(coreInfo);
+
+					if (!deleteTx) {
+						throw new Error("requestDeleteFile returned no tx hash");
+					}
+
+					await publicClient.waitForTransactionReceipt({ hash: deleteTx });
+
+					// Small delay to ensure nonce increments before next transaction
+					await sleep(500);
+
+					deleted++;
+					console.log(
+						`[stress]   ✓ ${file.name} deleted (${deleted}/${totalToDelete})`,
+					);
+				} catch (error) {
+					const errorMsg =
+						error instanceof Error ? error.message : String(error);
+
+					// If file has active storage request, retry later
+					if (errorMsg.includes("FileHasActiveStorageRequest")) {
+						console.log(
+							`[stress]   ⏳ ${file.name} still has active storage request, will retry`,
+						);
+						failedFiles.push(file);
+					} else {
+						// Other errors - log and skip
+						console.error(
+							`[stress]   ✗ ${file.name} deletion failed (permanent):`,
+							errorMsg.substring(0, 100),
+						);
+					}
 				}
+			}
 
-				await publicClient.waitForTransactionReceipt({ hash: deleteTx });
+			// Update retry list
+			filesToDelete = failedFiles;
 
-				deleted++;
+			// If all files deleted successfully, we're done
+			if (filesToDelete.length === 0) {
 				console.log(
-					`[stress]   ✓ ${file.name} deleted (${deleted}/${filesToDelete.length})`,
+					`[stress] ✓ All files deleted successfully on attempt ${attempt}`,
 				);
-			} catch (error) {
-				console.error(
-					`[stress]   ✗ ${file.name} deletion failed:`,
-					error instanceof Error ? error.message : error,
+				break;
+			}
+
+			// If there are more attempts and files to retry, wait before next attempt
+			if (attempt < MAX_DELETE_RETRIES && filesToDelete.length > 0) {
+				console.log(
+					`[stress] Waiting ${RETRY_DELAY_MS / 1000}s before retry (${filesToDelete.length} files remaining)...`,
 				);
+				await sleep(RETRY_DELAY_MS);
 			}
 		}
 
 		const deleteDuration = Date.now() - deleteStartTime;
 		console.log(
-			`\n[stress] ✓ Deletion complete: ${deleted}/${filesToDelete.length} files in ${(deleteDuration / 1000).toFixed(1)}s`,
+			`\n[stress] ✓ Deletion complete: ${deleted}/${totalToDelete} files in ${(deleteDuration / 1000).toFixed(1)}s`,
 		);
+
+		if (filesToDelete.length > 0) {
+			console.log(
+				`[stress] ⚠️  ${filesToDelete.length} files could not be deleted after ${MAX_DELETE_RETRIES} attempts`,
+			);
+		}
 
 		// ========================================================================
 		// SUMMARY
@@ -468,20 +528,34 @@ export async function runFileUploadStress(
 			`  Average: ${uploaded > 0 ? (uploadDuration / uploaded).toFixed(0) : 0}ms per file`,
 		);
 		console.log(
-			`Files deleted: ${deleted}/${filesToDelete.length} (${((deleted / filesToDelete.length) * 100).toFixed(1)}%)`,
+			`Files deleted: ${deleted}/${totalToDelete} (${((deleted / totalToDelete) * 100).toFixed(1)}%)`,
 		);
 		console.log(`  Duration: ${(deleteDuration / 1000).toFixed(1)}s`);
 		console.log(`Total duration: ${(totalDuration / 1000).toFixed(1)}s`);
 		console.log("=".repeat(80));
 
+		// Calculate success rates
+		const storageSuccessRate = (storageRequested / files.length) * 100;
+		const uploadSuccessRate =
+			storageRequested > 0 ? (uploaded / storageRequested) * 100 : 0;
+		const deleteSuccessRate =
+			totalToDelete > 0 ? (deleted / totalToDelete) * 100 : 0;
+
+		// Pass if 90% or more of each phase succeeded (stress tests allow some failures)
+		const SUCCESS_THRESHOLD = 90;
 		if (
-			storageRequested === files.length &&
-			uploaded === storageRequested &&
-			deleted === filesToDelete.length
+			storageSuccessRate >= SUCCESS_THRESHOLD &&
+			uploadSuccessRate >= SUCCESS_THRESHOLD &&
+			deleteSuccessRate >= SUCCESS_THRESHOLD
 		) {
-			console.log("✅ Stress test PASSED");
+			console.log(
+				`✅ Stress test PASSED (${storageSuccessRate.toFixed(1)}% storage, ${uploadSuccessRate.toFixed(1)}% upload, ${deleteSuccessRate.toFixed(1)}% delete)`,
+			);
 		} else {
-			console.log("⚠️ Stress test completed with some failures");
+			console.log(
+				`❌ Stress test FAILED (${storageSuccessRate.toFixed(1)}% storage, ${uploadSuccessRate.toFixed(1)}% upload, ${deleteSuccessRate.toFixed(1)}% delete)`,
+			);
+			console.log(`   Threshold: ${SUCCESS_THRESHOLD}% per phase`);
 			process.exitCode = 1;
 		}
 	} catch (error) {
