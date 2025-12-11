@@ -33,7 +33,7 @@ jobs:
       - name: Run monitor
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
-          DATAHAVEN_NETWORK: stagenet
+          DATAHAVEN_NETWORK: testnet
           MONITOR_OUTPUT_DIR: badges
         run: bun run monitor
 
@@ -56,13 +56,22 @@ jobs:
         if: always()
         id: status_check
         run: |
+          # Debug: Show what we have
+          echo "=== Debug: Current status.json ==="
+          if [ -f badges/status.json ]; then
+            cat badges/status.json || echo "Failed to read badges/status.json"
+          else
+            echo "badges/status.json does not exist"
+          fi
+          echo "==================================="
+
           # Parse current status
           CURRENT_STATUS="unknown"
           CURRENT_FAILED_STAGES=""
-          if [ -f badges/status.json ]; then
+          if [ -f badges/status.json ] && [ -s badges/status.json ]; then
             if grep -q '"failed"' badges/status.json; then
               CURRENT_STATUS="failed"
-              CURRENT_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' badges/status.json | tr '\n' ',' | sed 's/,$//')
+              CURRENT_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' badges/status.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
             elif grep -q '"success"' badges/status.json; then
               CURRENT_STATUS="success"
             fi
@@ -71,28 +80,35 @@ jobs:
           # Parse previous status
           PREVIOUS_STATUS="unknown"
           PREVIOUS_FAILED_STAGES=""
-          FIRST_RUN="false"
-          if [ -f previous/status.json ]; then
+          PREVIOUS_FILE_EXISTS="false"
+          if [ -f previous/status.json ] && [ -s previous/status.json ]; then
+            PREVIOUS_FILE_EXISTS="true"
             if grep -q '"failed"' previous/status.json; then
               PREVIOUS_STATUS="failed"
-              PREVIOUS_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' previous/status.json | tr '\n' ',' | sed 's/,$//')
+              PREVIOUS_FAILED_STAGES=$(jq -r '.stages[] | select(.status == "failed") | .key' previous/status.json 2>/dev/null | tr '\n' ',' | sed 's/,$//')
             elif grep -q '"success"' previous/status.json; then
               PREVIOUS_STATUS="success"
             fi
-          else
-            # No previous status file found - this is the first run
+          fi
+
+          # Determine if this is effectively a first run
+          # First run = no previous file OR previous is unknown but current has valid status
+          FIRST_RUN="false"
+          if [ "$PREVIOUS_FILE_EXISTS" = "false" ]; then
+            FIRST_RUN="true"
+          elif [ "$PREVIOUS_STATUS" = "unknown" ] && [ "$CURRENT_STATUS" != "unknown" ]; then
             FIRST_RUN="true"
           fi
 
           # Determine if status changed
           STATUS_CHANGED="false"
           
-          # Always notify on first run (no previous status available)
-          if [ "$FIRST_RUN" = "true" ]; then
+          # Always notify on first meaningful run
+          if [ "$FIRST_RUN" = "true" ] && [ "$CURRENT_STATUS" != "unknown" ]; then
             STATUS_CHANGED="true"
-            echo "First run detected - will notify"
-          # Notify if status changed
-          elif [ "$CURRENT_STATUS" != "$PREVIOUS_STATUS" ]; then
+            echo "First run with valid status detected - will notify"
+          # Notify if status changed (and not both unknown)
+          elif [ "$CURRENT_STATUS" != "$PREVIOUS_STATUS" ] && ! ([ "$CURRENT_STATUS" = "unknown" ] && [ "$PREVIOUS_STATUS" = "unknown" ]); then
             STATUS_CHANGED="true"
           # Notify if failed stages changed
           elif [ "$CURRENT_STATUS" = "failed" ] && [ "$CURRENT_FAILED_STAGES" != "$PREVIOUS_FAILED_STAGES" ]; then
@@ -189,7 +205,7 @@ jobs:
                     },
                     {
                       \"title\": \"Network\",
-                      \"value\": \"Stagenet\",
+                      \"value\": \"Testnet\",
                       \"short\": true
                     },
                     {
