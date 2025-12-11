@@ -19,6 +19,12 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { getNetworkConfig, getPrivateKey } from "../monitor/config";
+import {
+  extractPeerId,
+  generateRandomBytes,
+  sleep,
+  to0x,
+} from "../util/helpers";
 import type { StressRunOptions } from "./index";
 
 // ============================================================================
@@ -27,31 +33,9 @@ import type { StressRunOptions } from "./index";
 const STRESS_CONFIG = {
   bucketName: "stress-test-bucket", // Static bucket name
   fileCount: 25, // Number of files to upload
-  fileSizeBytes: 500 * 1024, // 10 KB per file
+  fileSizeBytes: 1024 * 1024, // 1 MB per file
   concurrency: 5, // Upload N files at a time
 };
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-function generateRandomBytes(size: number): Uint8Array {
-  const bytes = new Uint8Array(size);
-  for (let i = 0; i < size; i++) {
-    bytes[i] = Math.floor(Math.random() * 256);
-  }
-  return bytes;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function to0x(val: string): `0x${string}` {
-  return val.startsWith("0x")
-    ? (val as `0x${string}`)
-    : (`0x${val}` as `0x${string}`);
-}
 
 // ============================================================================
 // MAIN STRESS TEST
@@ -461,17 +445,6 @@ export async function runFileUploadStress(
     console.error("\n[stress] ✗ Fatal error:", error);
     throw error;
   }
-}
-
-// Helper to extract peer ID from multiaddresses
-function extractPeerId(multiaddrs: string[]): string {
-  if (multiaddrs.length === 0) throw new Error("No multiaddresses available");
-  const parts = multiaddrs[0].split("/");
-  const peerIdIndex = parts.findIndex((p) => p === "p2p");
-  if (peerIdIndex === -1 || peerIdIndex === parts.length - 1) {
-    throw new Error("Could not extract peer ID from multiaddress");
-  }
-  return parts[peerIdIndex + 1];
 }
 
 // Run if executed directly
