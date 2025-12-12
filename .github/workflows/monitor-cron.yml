@@ -33,7 +33,7 @@ jobs:
       - name: Run monitor
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
-          DATAHAVEN_NETWORK: testnet
+          DATAHAVEN_NETWORK: stagenet
           MONITOR_OUTPUT_DIR: badges
         run: bun run monitor
 
