@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
-  "label": "File Download",
-  "message": "passed",
-  "color": "brightgreen",
-  "cacheSeconds": 300
+	"schemaVersion": 1,
+	"label": "Sanity – Download File",
+	"message": "failed",
+	"color": "red",
+	"cacheSeconds": 300
 }
