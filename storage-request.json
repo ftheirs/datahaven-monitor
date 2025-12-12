@@ -1,7 +1,7 @@
 {
-	"schemaVersion": 1,
-	"label": "Sanity – Issue Storage Request",
-	"message": "passed",
-	"color": "brightgreen",
-	"cacheSeconds": 300
+  "schemaVersion": 1,
+  "label": "Storage Request",
+  "message": "passed",
+  "color": "brightgreen",
+  "cacheSeconds": 300
 }
