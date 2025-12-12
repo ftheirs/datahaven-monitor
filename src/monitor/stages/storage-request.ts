@@ -60,8 +60,8 @@ export async function storageRequestStage(ctx: MonitorContext): Promise<void> {
 		ctx.fileSize,
 		ctx.mspId as `0x${string}`,
 		peerId ? [peerId] : [],
-		ReplicationLevel.Basic,
-		0,
+		ReplicationLevel.Custom,
+		2,
 	);
 	if (!txHash) {
 		throw new Error("issueStorageRequest did not return a transaction hash");
