@@ -37,6 +37,15 @@ jobs:
           MONITOR_OUTPUT_DIR: badges-heavy
         run: bun run monitor-heavy
 
+      - name: Download previous monitor-heavy status from gh-pages branch
+        if: always()
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 1
+
       - name: Publish monitor-heavy endpoints to gh-pages (heavy/)
         if: always()
         uses: peaceiris/actions-gh-pages@v3
@@ -45,15 +54,6 @@ jobs:
           publish_dir: badges-heavy
           destination_dir: heavy
           keep_files: true
-
-      - name: Download previous monitor-heavy status from GitHub Pages
-        if: always()
-        continue-on-error: true
-        run: |
-          echo "Downloading previous monitor-heavy status from GitHub Pages..."
-          curl -f -o previous-monitor-heavy-status.json \
-            https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/heavy/monitor-heavy-status.json \
-            || echo "No previous status found (this might be the first run)"
 
       - name: Parse monitor-heavy status and detect changes
         if: always()
@@ -79,12 +79,21 @@ jobs:
           TOTAL=$(jq -r '.phases | length' badges-heavy/monitor-heavy-status.json)
 
           PREVIOUS_OVERALL="unknown"
+          PREVIOUS_VALID="false"
           STATUS_CHANGED="true"
           CHANGE_TYPE="initial"
 
-          if [ -f previous-monitor-heavy-status.json ] && [ -s previous-monitor-heavy-status.json ]; then
-            PREVIOUS_OVERALL=$(jq -r '.overall' previous-monitor-heavy-status.json 2>/dev/null || echo "unknown")
+          # Prefer reading the previous status from the gh-pages branch directly.
+          PREVIOUS_PATH="gh-pages/heavy/monitor-heavy-status.json"
+          if [ -f "$PREVIOUS_PATH" ] && [ -s "$PREVIOUS_PATH" ]; then
+            # -e: fail on null/false, so we can reliably detect invalid/non-JSON content.
+            PREVIOUS_OVERALL=$(jq -er '.overall' "$PREVIOUS_PATH" 2>/dev/null || echo "")
+            if [ "$PREVIOUS_OVERALL" = "success" ] || [ "$PREVIOUS_OVERALL" = "failed" ]; then
+              PREVIOUS_VALID="true"
+            fi
+          fi
 
+          if [ "$PREVIOUS_VALID" = "true" ]; then
             if [ "$CURRENT_OVERALL" = "$PREVIOUS_OVERALL" ]; then
               STATUS_CHANGED="false"
               echo "✓ Status unchanged: $CURRENT_OVERALL"
@@ -100,7 +109,15 @@ jobs:
               echo "ℹ️ Status changed: $PREVIOUS_OVERALL → $CURRENT_OVERALL ($CHANGE_TYPE)"
             fi
           else
-            echo "ℹ️ No previous status found - initial run"
+            # If a previous file exists but isn't valid JSON, treat it as "unknown" and
+            # *do not* alert to avoid spamming on every run due to parse failures.
+            if [ -f "$PREVIOUS_PATH" ] && [ -s "$PREVIOUS_PATH" ]; then
+              STATUS_CHANGED="false"
+              CHANGE_TYPE="invalid_previous"
+              echo "⚠️ Previous status exists but is invalid/unparsable; skipping Slack notification"
+            else
+              echo "ℹ️ No previous status found - initial run"
+            fi
           fi
 
           echo "overall=$CURRENT_OVERALL" >> $GITHUB_OUTPUT
