@@ -306,7 +306,7 @@ jobs:
                     },
                     {
                       \"title\": \"Info\",
-                      \"value\": \"Network: Stagenet | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
+                      \"value\": \"Network: Testnet | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
                       \"short\": false
                     }
                   ],
