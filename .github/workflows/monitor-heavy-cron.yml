@@ -1,0 +1,248 @@
+name: Monitor Heavy – Testnet Sentinel
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  monitor_heavy:
+    name: Run Monitor Heavy
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run monitor-heavy
+        env:
+          ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
+          DATAHAVEN_NETWORK: testnet
+          MONITOR_OUTPUT_DIR: badges-heavy
+        run: bun run monitor-heavy
+
+      - name: Publish monitor-heavy endpoints to gh-pages (heavy/)
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: badges-heavy
+          destination_dir: heavy
+          keep_files: true
+
+      - name: Download previous monitor-heavy status from GitHub Pages
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "Downloading previous monitor-heavy status from GitHub Pages..."
+          curl -f -o previous-monitor-heavy-status.json \
+            https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/heavy/monitor-heavy-status.json \
+            || echo "No previous status found (this might be the first run)"
+
+      - name: Parse monitor-heavy status and detect changes
+        if: always()
+        id: parse_status
+        run: |
+          if [ ! -f badges-heavy/monitor-heavy-status.json ]; then
+            echo "monitor-heavy-status.json not found"
+            exit 0
+          fi
+
+          echo "=== Current Monitor Heavy Status ==="
+          cat badges-heavy/monitor-heavy-status.json
+          echo "==================================="
+
+          CURRENT_OVERALL=$(jq -r '.overall' badges-heavy/monitor-heavy-status.json)
+          CURRENT_NETWORK=$(jq -r '.network' badges-heavy/monitor-heavy-status.json)
+          CURRENT_DURATION_MS=$(jq -r '.summary.durationMs' badges-heavy/monitor-heavy-status.json)
+          CURRENT_DURATION_S=$((CURRENT_DURATION_MS / 1000))
+
+          FAILED_PHASES=$(jq -r '.phases[] | select(.status == "failed") | .label' badges-heavy/monitor-heavy-status.json | tr '\n' ',' | sed 's/,$//')
+          PASSED=$(jq -r '[.phases[] | select(.status == "passed")] | length' badges-heavy/monitor-heavy-status.json)
+          FAILED=$(jq -r '[.phases[] | select(.status == "failed")] | length' badges-heavy/monitor-heavy-status.json)
+          TOTAL=$(jq -r '.phases | length' badges-heavy/monitor-heavy-status.json)
+
+          PREVIOUS_OVERALL="unknown"
+          STATUS_CHANGED="true"
+          CHANGE_TYPE="initial"
+
+          if [ -f previous-monitor-heavy-status.json ] && [ -s previous-monitor-heavy-status.json ]; then
+            PREVIOUS_OVERALL=$(jq -r '.overall' previous-monitor-heavy-status.json 2>/dev/null || echo "unknown")
+
+            if [ "$CURRENT_OVERALL" = "$PREVIOUS_OVERALL" ]; then
+              STATUS_CHANGED="false"
+              echo "✓ Status unchanged: $CURRENT_OVERALL"
+            else
+              STATUS_CHANGED="true"
+              if [ "$PREVIOUS_OVERALL" = "success" ] && [ "$CURRENT_OVERALL" = "failed" ]; then
+                CHANGE_TYPE="degraded"
+              elif [ "$PREVIOUS_OVERALL" = "failed" ] && [ "$CURRENT_OVERALL" = "success" ]; then
+                CHANGE_TYPE="recovered"
+              else
+                CHANGE_TYPE="changed"
+              fi
+              echo "ℹ️ Status changed: $PREVIOUS_OVERALL → $CURRENT_OVERALL ($CHANGE_TYPE)"
+            fi
+          else
+            echo "ℹ️ No previous status found - initial run"
+          fi
+
+          echo "overall=$CURRENT_OVERALL" >> $GITHUB_OUTPUT
+          echo "previous_overall=$PREVIOUS_OVERALL" >> $GITHUB_OUTPUT
+          echo "network=$CURRENT_NETWORK" >> $GITHUB_OUTPUT
+          echo "duration_s=$CURRENT_DURATION_S" >> $GITHUB_OUTPUT
+          echo "failed_phases=$FAILED_PHASES" >> $GITHUB_OUTPUT
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "status_changed=$STATUS_CHANGED" >> $GITHUB_OUTPUT
+          echo "change_type=$CHANGE_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Send Slack notification (monitor-heavy)
+        if: always() && steps.parse_status.outputs.status_changed == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          OVERALL: ${{ steps.parse_status.outputs.overall }}
+          PREVIOUS_OVERALL: ${{ steps.parse_status.outputs.previous_overall }}
+          CHANGE_TYPE: ${{ steps.parse_status.outputs.change_type }}
+          NETWORK: ${{ steps.parse_status.outputs.network }}
+          DURATION_S: ${{ steps.parse_status.outputs.duration_s }}
+          FAILED_PHASES: ${{ steps.parse_status.outputs.failed_phases }}
+          PASSED: ${{ steps.parse_status.outputs.passed }}
+          FAILED: ${{ steps.parse_status.outputs.failed }}
+          TOTAL: ${{ steps.parse_status.outputs.total }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL not configured, skipping notification"
+            exit 0
+          fi
+          if [ -z "$OVERALL" ]; then
+            echo "No monitor-heavy status to report"
+            exit 0
+          fi
+
+          if [ "$CHANGE_TYPE" = "recovered" ]; then
+            EMOJI="🟢"
+            COLOR="good"
+            TITLE="Recovered"
+          elif [ "$CHANGE_TYPE" = "degraded" ]; then
+            EMOJI="🔴"
+            COLOR="danger"
+            TITLE="Degraded"
+          elif [ "$CHANGE_TYPE" = "initial" ]; then
+            if [ "$OVERALL" = "success" ]; then
+              EMOJI="✅"
+              COLOR="good"
+              TITLE="Started (OK)"
+            else
+              EMOJI="❌"
+              COLOR="danger"
+              TITLE="Started (Failing)"
+            fi
+          else
+            if [ "$OVERALL" = "success" ]; then
+              EMOJI="✅"
+              COLOR="good"
+              TITLE="OK"
+            else
+              EMOJI="❌"
+              COLOR="danger"
+              TITLE="Failing"
+            fi
+          fi
+
+          SUMMARY="Status: ${PASSED}/${TOTAL} passed | Duration: ${DURATION_S}s"
+          if [ "$FAILED" != "0" ] && [ -n "$FAILED_PHASES" ]; then
+            SUMMARY="$SUMMARY | Failed: $FAILED_PHASES"
+          fi
+
+          # Build phase grid (3 columns) for the simplified heavy flow.
+          # Names match src/monitor-heavy/index.ts phaseLabel().
+          GRID=""
+          for phase_name in bucket-create storage-request-batch1 upload-batch1 file-delete-first5 storage-request-batch2 upload-batch2 file-delete-all10 bucket-delete; do
+            phase_status=$(jq -r ".phases[] | select(.name == \"$phase_name\") | .status" badges-heavy/monitor-heavy-status.json 2>/dev/null)
+
+            if [ "$phase_status" = "passed" ]; then
+              icon="✓"
+            elif [ "$phase_status" = "failed" ]; then
+              icon="✗"
+            else
+              icon="○"
+            fi
+
+            case "$phase_name" in
+              "bucket-create") display="Bucket Create     " ;;
+              "storage-request-batch1") display="Storage Req (B1)  " ;;
+              "upload-batch1") display="Upload (B1)       " ;;
+              "file-delete-first5") display="Delete Half      " ;;
+              "storage-request-batch2") display="Storage Req (B2)  " ;;
+              "upload-batch2") display="Upload (B2)       " ;;
+              "file-delete-all10") display="Delete All       " ;;
+              "bucket-delete") display="Bucket Delete     " ;;
+            esac
+
+            GRID="${GRID}${icon} ${display}    "
+
+            # New line after every 3 entries for readability
+            case "$phase_name" in
+              "upload-batch1"|"upload-batch2"|"bucket-delete") GRID="${GRID}\n" ;;
+            esac
+          done
+
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"text\": \"$EMOJI Testnet Sentinel - Monitor Heavy $TITLE\",
+              \"attachments\": [
+                {
+                  \"color\": \"$COLOR\",
+                  \"fields\": [
+                    {
+                      \"title\": \"Summary\",
+                      \"value\": \"$SUMMARY\",
+                      \"short\": false
+                    },
+                    {
+                      \"title\": \"Stage Results\",
+                      \"value\": \"$GRID\",
+                      \"short\": false
+                    },
+                    {
+                      \"title\": \"Info\",
+                      \"value\": \"Network: $NETWORK | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
+                      \"short\": false
+                    }
+                  ],
+                  \"footer\": \"Testnet Sentinel\",
+                  \"ts\": $(date +%s)
+                }
+              ]
+            }"
+
+      - name: Fail job if monitor-heavy reported failure
+        if: always()
+        run: |
+          if [ -f badges-heavy/monitor-heavy-status.json ]; then
+            if jq -e '.overall == "failed"' badges-heavy/monitor-heavy-status.json >/dev/null; then
+              echo "monitor-heavy reported failure"
+              exit 1
+            fi
+          fi
+
+
