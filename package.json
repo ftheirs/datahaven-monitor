@@ -9,6 +9,8 @@
 		"demo": "bun run scripts/storagehub-stagenet-demo.ts",
 		"end2end": "bun run scripts/storagehub-stagenet-end2end.ts",
 		"monitor": "bun run src/monitor/index.ts",
+		"monitor-heavy": "bun run src/monitor-heavy/index.ts",
+		"cleanup": "bun run src/tools/cleanup.ts",
 		"stress:upload": "bun run src/stress/fileUploadStress.ts",
 		"lint": "bunx @biomejs/biome check .",
 		"lint:fix": "bunx @biomejs/biome check . --write",
