@@ -1,57 +1,58 @@
 {
-  "timestamp": "2025-12-15T11:57:14.093Z",
-  "overall": "success",
+  "timestamp": "2025-12-15T12:42:57.918Z",
+  "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 9,
-    "failed": 0,
-    "skipped": 0
+    "passed": 3,
+    "failed": 1,
+    "skipped": 5
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2674
+      "duration": 3631
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 485
+      "duration": 640
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 1159
+      "duration": 642
     },
     {
       "name": "bucket-create",
-      "status": "passed",
-      "duration": 25023
+      "status": "failed",
+      "duration": 1266,
+      "error": "The contract function \"createBucket\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373635383032353736393732, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     },
     {
       "name": "storage-request",
-      "status": "passed",
-      "duration": 33958
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-upload",
-      "status": "passed",
-      "duration": 38707
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-download",
-      "status": "passed",
-      "duration": 817
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-delete",
-      "status": "passed",
-      "duration": 76794
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "bucket-delete",
-      "status": "passed",
-      "duration": 35731
+      "status": "skipped",
+      "duration": 0
     }
   ]
 }
