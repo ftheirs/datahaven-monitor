@@ -1,4 +1,4 @@
-name: Monitor – Stagenet Sentinel
+name: Monitor – Testnet Sentinel
 
 on:
   schedule:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   monitor:
-    name: Run Stagenet Sentinel
+    name: Run Testnet Sentinel
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -33,7 +33,7 @@ jobs:
       - name: Run monitor
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
-          DATAHAVEN_NETWORK: stagenet
+          DATAHAVEN_NETWORK: testnet
           MONITOR_OUTPUT_DIR: badges
         run: bun run monitor
 
@@ -289,7 +289,7 @@ jobs:
           curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"$EMOJI Stagenet Sentinel - $TITLE\",
+              \"text\": \"$EMOJI Testnet Sentinel - $TITLE\",
               \"attachments\": [
                 {
                   \"color\": \"$COLOR\",
@@ -306,11 +306,11 @@ jobs:
                     },
                     {
                       \"title\": \"Info\",
-                      \"value\": \"Network: Stagenet | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
+                      \"value\": \"Network: Testnet | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
                       \"short\": false
                     }
                   ],
-                  \"footer\": \"Stagenet Sentinel\",
+                  \"footer\": \"Testnet Sentinel\",
                   \"ts\": $(date +%s)
                 }
               ]
