@@ -27,6 +27,8 @@ import { getNetworkConfig, getPrivateKey } from "../monitor/config";
 import { createUserApi } from "../userApi";
 import {
   pollBackend,
+  waitForFinalization,
+  waitForOnChainData,
   waitForStorageRequestCleared,
 } from "../monitor/utils/waits";
 import {
@@ -171,6 +173,11 @@ async function uploadWithRetry(opts: {
       );
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
+      // High-signal log for diagnosing flaky backend behavior (403/404/timeouts/etc).
+      // Keep it short to avoid flooding CI logs with giant SDK stack traces.
+      console.log(
+        `[monitor-heavy] upload retryable error (attempt ${attempt}): ${msg.slice(0, 180)}`,
+      );
 
       const shouldRetry =
         msg.includes("not expecting") ||
@@ -222,7 +229,7 @@ const HEAVY_CONFIG = {
   maxFileSizeBytes: 1 * 1024 * 1024, // 1MB
 
   // Upload concurrency (HTTP)
-  uploadConcurrency: 5,
+  uploadConcurrency: 3,
 
   // Replication
   batch1Replicas: 1, // replicas=1
@@ -239,9 +246,11 @@ const HEAVY_CONFIG = {
   uploadRetryMaxTotalMs: 8 * 60_000,
   uploadRetryBaseDelayMs: 10_000,
   uploadRetryMaxDelayMs: 60_000,
+  // On-chain visibility wait for storageRequests(fileKey) after issuing SR tx
+  storageRequestVisibleTimeoutMs: 2 * 60_000,
   deleteRetryDelaysMs: [30_000, 60_000, 90_000],
   storageRequestClearedTimeoutMs: 10 * 60_000, // 10 min per file
-  bucketReadyPoll: { retries: 80, delayMs: 3_000 }, // 4 min
+  bucketReadyPoll: { retries: 240, delayMs: 3_000 }, // 12 min
 } as const;
 
 type FileSpec = {
@@ -541,6 +550,18 @@ async function runMonitorHeavy(): Promise<void> {
         if (rcpt.status !== "success")
           throw new Error("issueStorageRequest failed");
         f.storageRequestIssuedAtMs = Date.now();
+
+        // DEEP DIFFERENCE vs regular monitor:
+        // The normal monitor waits for Substrate finalization and verifies the storage request
+        // exists on-chain before attempting upload. Without this, MSP can respond 403/404
+        // because the SR is not yet visible/indexed.
+        await waitForFinalization(userApi);
+        await waitForOnChainData(
+          () => userApi.query.fileSystem.storageRequests(f.fileKeyHex as `0x${string}`),
+          (sr) => !(sr as any).isNone,
+          { retries: Math.ceil(HEAVY_CONFIG.storageRequestVisibleTimeoutMs / 5_000), delayMs: 5_000 },
+        );
+
         // small spacing like stress test to avoid transient RPC nonce/fee issues
         await sleep(500);
       }
