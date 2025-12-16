@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "Storage Request",
-  "message": "passed",
-  "color": "brightgreen",
+  "message": "skipped",
+  "color": "lightgrey",
   "cacheSeconds": 300
 }
