@@ -1,13 +1,13 @@
 name: Monitor Heavy – Stagenet Sentinel
 
 on:
-  schedule:
-    # Run every 15 minutes
-    - cron: "*/15 * * * *"
+  # schedule:
+  #   # Run every 15 minutes
+  #   - cron: "*/15 * * * *"
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
 
 permissions:
   contents: write
