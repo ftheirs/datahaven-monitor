@@ -142,11 +142,25 @@ async function uploadWithRetry(opts: {
   reAuth: () => Promise<void>;
   retries?: number;
   delayMs?: number;
+  maxTotalMs?: number;
+  maxDelayMs?: number;
 }) {
-  const retries = opts.retries ?? 5;
-  const delayMs = opts.delayMs ?? 10_000;
+  const startedAt = Date.now();
+  const maxTotalMs = opts.maxTotalMs ?? 8 * 60_000; // default: 8 minutes
+  const maxDelayMs = opts.maxDelayMs ?? 60_000;
 
-  for (let i = 0; i < retries; i++) {
+  // Back-compat: if callers pass retries/delayMs, interpret as a minimum retry budget.
+  const minRetries = opts.retries ?? 5;
+  const baseDelayMs = opts.delayMs ?? 10_000;
+
+  let attempt = 0;
+  while (true) {
+    const elapsed = Date.now() - startedAt;
+    if (attempt >= minRetries && elapsed > maxTotalMs) {
+      throw new Error("upload failed after retry window elapsed");
+    }
+    attempt += 1;
+
     try {
       return await opts.mspClient.files.uploadFile(
         opts.bucketId,
@@ -175,16 +189,23 @@ async function uploadWithRetry(opts: {
         }
       }
 
-      if (shouldRetry && i < retries - 1) {
-        await sleep(delayMs);
+      if (shouldRetry) {
+        const elapsedNow = Date.now() - startedAt;
+        if (attempt >= minRetries && elapsedNow > maxTotalMs) {
+          throw error;
+        }
+        // Simple exponential backoff with cap.
+        const nextDelay = Math.min(
+          maxDelayMs,
+          Math.floor(baseDelayMs * Math.pow(1.5, attempt - 1)),
+        );
+        await sleep(nextDelay);
         continue;
       }
 
       throw error;
     }
   }
-
-  throw new Error("upload failed after all retries");
 }
 
 // ============================================================================
@@ -211,6 +232,13 @@ const HEAVY_CONFIG = {
 
   // Waits/timeouts
   postStorageRequestBulkWaitMs: 10_000,
+  // Ensure we don't try to upload "too soon" after issuing the on-chain storage request.
+  // Stagenet can lag in backend indexing/authorization, leading to transient HTTP 403s.
+  minIssueToUploadMs: 60_000,
+  // Upload retry window (keep under typical SR upload expiry)
+  uploadRetryMaxTotalMs: 8 * 60_000,
+  uploadRetryBaseDelayMs: 10_000,
+  uploadRetryMaxDelayMs: 60_000,
   deleteRetryDelaysMs: [30_000, 60_000, 90_000],
   storageRequestClearedTimeoutMs: 10 * 60_000, // 10 min per file
   bucketReadyPoll: { retries: 80, delayMs: 3_000 }, // 4 min
@@ -223,6 +251,7 @@ type FileSpec = {
   sizeBytes: number;
   fingerprintHex?: `0x${string}`;
   fileKeyHex?: `0x${string}`;
+  storageRequestIssuedAtMs?: number;
 };
 
 function randomIntInclusive(min: number, max: number): number {
@@ -511,6 +540,7 @@ async function runMonitorHeavy(): Promise<void> {
         const rcpt = await publicClient.waitForTransactionReceipt({ hash: tx });
         if (rcpt.status !== "success")
           throw new Error("issueStorageRequest failed");
+        f.storageRequestIssuedAtMs = Date.now();
         // small spacing like stress test to avoid transient RPC nonce/fee issues
         await sleep(500);
       }
@@ -526,8 +556,19 @@ async function runMonitorHeavy(): Promise<void> {
         async (f) => {
           if (!f.fileKeyHex) throw new Error("Missing fileKey for upload");
 
-          // Wait for MSP to process SR (bulk wait handled by caller, but keep per-upload delay too)
-          await sleep(network.delays.beforeUploadMs);
+          // Wait for MSP/backend to be ready to accept uploads for this SR.
+          // We enforce a minimum age since SR issuance, plus the existing per-network delay.
+          const issuedAt = f.storageRequestIssuedAtMs;
+          const minWait = Math.max(
+            network.delays.beforeUploadMs,
+            HEAVY_CONFIG.minIssueToUploadMs,
+          );
+          if (issuedAt) {
+            const age = Date.now() - issuedAt;
+            if (age < minWait) await sleep(minWait - age);
+          } else {
+            await sleep(minWait);
+          }
 
           // Fresh FileManager + Blob right before upload
           const fm = new FileManager({
@@ -547,7 +588,9 @@ async function runMonitorHeavy(): Promise<void> {
             location: f.location,
             reAuth,
             retries: 5,
-            delayMs: 10_000,
+            delayMs: HEAVY_CONFIG.uploadRetryBaseDelayMs,
+            maxTotalMs: HEAVY_CONFIG.uploadRetryMaxTotalMs,
+            maxDelayMs: HEAVY_CONFIG.uploadRetryMaxDelayMs,
           });
           if (res.status !== "upload_successful") {
             throw new Error(`upload failed: ${res.status}`);
