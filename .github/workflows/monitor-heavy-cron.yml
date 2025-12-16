@@ -80,8 +80,10 @@ jobs:
 
           PREVIOUS_OVERALL="unknown"
           PREVIOUS_VALID="false"
-          STATUS_CHANGED="true"
-          CHANGE_TYPE="initial"
+          # Toggle-only notifications: default to NO notification unless we can
+          # prove the overall status changed vs a valid previous status.
+          STATUS_CHANGED="false"
+          CHANGE_TYPE="unchanged"
 
           # Prefer reading the previous status from the gh-pages branch directly.
           PREVIOUS_PATH="gh-pages/heavy/monitor-heavy-status.json"
@@ -116,7 +118,8 @@ jobs:
               CHANGE_TYPE="invalid_previous"
               echo "⚠️ Previous status exists but is invalid/unparsable; skipping Slack notification"
             else
-              echo "ℹ️ No previous status found - initial run"
+              CHANGE_TYPE="no_previous"
+              echo "ℹ️ No valid previous status found; skipping Slack notification"
             fi
           fi
 
