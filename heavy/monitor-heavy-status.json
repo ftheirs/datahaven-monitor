@@ -1,0 +1,38 @@
+{
+  "timestamp": "2025-12-16T14:04:51.385Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Stagenet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 153726,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 5242880,
+    "uploadConcurrency": 5,
+    "batch1Replicas": 1,
+    "batch2Replicas": 1
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "passed",
+      "durationMs": 22717
+    },
+    {
+      "name": "storage-request-batch1",
+      "label": "Storage Req (Batch 1)",
+      "status": "passed",
+      "durationMs": 60028
+    },
+    {
+      "name": "upload-batch1",
+      "label": "Upload (Batch 1)",
+      "status": "failed",
+      "durationMs": 60766,
+      "error": "HTTP 403 for PUT https://deo-dh-backend.stagenet.datahaven-infra.network/buckets/0x2540e218dc784ad80f147a109faa128a7d528606d27117016d7a135be2a69d37/upload/0x9aa2e3972429e6c80da050920d6aaa995542e7b594c9b9c9a05f251910368fd5"
+    }
+  ]
+}
