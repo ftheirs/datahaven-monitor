@@ -219,7 +219,7 @@ const HEAVY_CONFIG = {
 
   // File sizes
   minFileSizeBytes: 100 * 1024, // 100kB
-  maxFileSizeBytes: 5 * 1024 * 1024, // 5MB
+  maxFileSizeBytes: 1 * 1024 * 1024, // 1MB
 
   // Upload concurrency (HTTP)
   uploadConcurrency: 5,
