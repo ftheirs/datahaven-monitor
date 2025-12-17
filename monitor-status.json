@@ -1,58 +1,57 @@
 {
-  "timestamp": "2025-12-17T11:43:02.725Z",
-  "overall": "failed",
+  "timestamp": "2025-12-17T11:58:01.342Z",
+  "overall": "success",
   "summary": {
     "total": 9,
-    "passed": 4,
-    "failed": 1,
-    "skipped": 4
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2942
+      "duration": 1887
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 688
+      "duration": 343
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 1134
+      "duration": 613
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 23207
+      "duration": 25651
     },
     {
       "name": "storage-request",
-      "status": "failed",
-      "duration": 1208,
-      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0x0f83ee02e1224f2344c710b29768baa486183fbb659c1bed8cf92bb219d0ce10, 0x61646f6c706875732e6a7067, 0x34eb5f637e05fc18f857ccb013250076534192189894d174ee3aa6d3525f6970, 416400, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f574e456f723669694541625a684358714a62586962646a6574684459386f65446f6965565678705a6851635731\"], 5, 2)\n  sender:    0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
+      "status": "passed",
+      "duration": 34002
     },
     {
       "name": "file-upload",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 38515
     },
     {
       "name": "file-download",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 504
     },
     {
       "name": "file-delete",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 101205
     },
     {
       "name": "bucket-delete",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 35953
     }
   ]
 }
