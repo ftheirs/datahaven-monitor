@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "File Upload",
-  "message": "failed",
-  "color": "red",
+  "message": "passed",
+  "color": "brightgreen",
   "cacheSeconds": 300
 }
