@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "Bucket Create",
-  "message": "failed",
-  "color": "red",
+  "message": "passed",
+  "color": "brightgreen",
   "cacheSeconds": 300
 }
