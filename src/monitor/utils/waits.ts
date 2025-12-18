@@ -55,7 +55,7 @@ export async function pollBackend(
 export async function waitForStorageRequestFulfilled(
 	userApi: EnrichedUserApi,
 	fileKey: `0x${string}`,
-	timeoutMs = 300_000, // 5 minutes (Testnet is slower than Stagenet)
+	timeoutMs = 660_000, // 11 minutes (networks/backends can be slow/flaky)
 ): Promise<string> {
 	const deadline = Date.now() + timeoutMs;
 	while (true) {

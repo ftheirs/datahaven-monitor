@@ -157,7 +157,8 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
 				return false;
 			}
 		},
-		{ retries: 40, delayMs: 3000 },
+		// Align with monitor-heavy tolerance: allow longer for indexing/propagation.
+		{ retries: 220, delayMs: 3000 }, // ~11 minutes
 	);
 
 	// Store the final fileKey in context for subsequent stages
