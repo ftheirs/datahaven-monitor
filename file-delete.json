@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "File Delete",
-  "message": "failed",
-  "color": "red",
+  "message": "skipped",
+  "color": "lightgrey",
   "cacheSeconds": 300
 }
