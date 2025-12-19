@@ -1,53 +1,53 @@
 {
-  "timestamp": "2025-12-19T10:06:20.970Z",
+  "timestamp": "2025-12-19T10:36:08.558Z",
   "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 5,
+    "passed": 7,
     "failed": 1,
-    "skipped": 3
+    "skipped": 1
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 1953
+      "duration": 2536
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 402
+      "duration": 646
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 582
+      "duration": 497
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 24012
+      "duration": 23188
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 34015
+      "duration": 33981
     },
     {
       "name": "file-upload",
-      "status": "failed",
-      "duration": 675596,
-      "error": "Timeout waiting for finalized event"
+      "status": "passed",
+      "duration": 368635
     },
     {
       "name": "file-download",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 697
     },
     {
       "name": "file-delete",
-      "status": "skipped",
-      "duration": 0
+      "status": "failed",
+      "duration": 173080,
+      "error": "File not removed from bucket in time"
     },
     {
       "name": "bucket-delete",
