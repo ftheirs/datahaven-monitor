@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-12-19T05:42:28.531Z",
+  "timestamp": "2025-12-19T05:46:32.226Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
-  "overall": "success",
+  "overall": "failed",
   "summary": {
-    "durationMs": 1420333,
+    "durationMs": 139252,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,49 +19,14 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 19865
+      "durationMs": 21755
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
-      "status": "passed",
-      "durationMs": 239697
-    },
-    {
-      "name": "upload-batch1",
-      "label": "Upload (Batch 1)",
-      "status": "passed",
-      "durationMs": 500138
-    },
-    {
-      "name": "file-delete-first5",
-      "label": "Delete Half",
-      "status": "passed",
-      "durationMs": 248844
-    },
-    {
-      "name": "storage-request-batch2",
-      "label": "Storage Req (Batch 2)",
-      "status": "passed",
-      "durationMs": 116975
-    },
-    {
-      "name": "upload-batch2",
-      "label": "Upload (Batch 2)",
-      "status": "passed",
-      "durationMs": 61775
-    },
-    {
-      "name": "file-delete-all10",
-      "label": "Delete All",
-      "status": "passed",
-      "durationMs": 194368
-    },
-    {
-      "name": "bucket-delete",
-      "label": "Bucket Delete",
-      "status": "passed",
-      "durationMs": 18450
+      "status": "failed",
+      "durationMs": 117346,
+      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0xf1c5b23efe9879c8adaf79a88116224f846e97b20f0d7192fb226b9e854e44af, 0x68656176792d612d313736363132333037343735302d352d3137353536332e62696e, 0x2e8829471703f6206813d94222d3a6175ee4b56e0645e8918722fa83653bfc97, 175563, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f574e456f723669694541625a684358714a62586962646a6574684459386f65446f6965565678705a6851635731\"], 0, 0)\n  sender:    0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     }
   ]
 }
