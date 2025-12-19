@@ -1,57 +1,58 @@
 {
-  "timestamp": "2025-12-19T09:38:37.584Z",
-  "overall": "success",
+  "timestamp": "2025-12-19T10:06:20.970Z",
+  "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 9,
-    "failed": 0,
-    "skipped": 0
+    "passed": 5,
+    "failed": 1,
+    "skipped": 3
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2231
+      "duration": 1953
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 576
+      "duration": 402
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 464
+      "duration": 582
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 25180
+      "duration": 24012
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 34012
+      "duration": 34015
     },
     {
       "name": "file-upload",
-      "status": "passed",
-      "duration": 50604
+      "status": "failed",
+      "duration": 675596,
+      "error": "Timeout waiting for finalized event"
     },
     {
       "name": "file-download",
-      "status": "passed",
-      "duration": 607
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-delete",
-      "status": "passed",
-      "duration": 166750
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "bucket-delete",
-      "status": "passed",
-      "duration": 35894
+      "status": "skipped",
+      "duration": 0
     }
   ]
 }
