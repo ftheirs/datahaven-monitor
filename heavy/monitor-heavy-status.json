@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-12-20T16:57:05.088Z",
+  "timestamp": "2025-12-20T17:07:17.180Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 765197,
+    "durationMs": 766544,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,19 +19,19 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 20983
+      "durationMs": 22192
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 237061
+      "durationMs": 237217
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "failed",
-      "durationMs": 497000,
+      "durationMs": 496978,
       "error": "upload failed after retry window elapsed"
     }
   ]
