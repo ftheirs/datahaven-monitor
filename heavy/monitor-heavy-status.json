@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-12-21T18:48:24.016Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Testnet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 2079,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 1048576,
+    "uploadConcurrency": 3,
+    "batch1Replicas": 1,
+    "batch2Replicas": 2
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "failed",
+      "durationMs": 2072,
+      "error": "The contract function \"createBucket\" reverted with the following reason:\nDispatched call failed with error: Module(ModuleError { index: 80, error: [6, 0, 0, 0], message: Some(\"NotEnoughBalance\") })\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d68656176792d313736363334323930323139352d383138333033, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac\n\nDocs: https://viem.sh/docs/contract/estimateContractGas\nVersion: viem@2.41.2"
+    }
+  ]
+}
