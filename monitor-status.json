@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-21T10:46:34.344Z",
+  "timestamp": "2025-12-21T10:57:57.075Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,33 +11,33 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 3050
+      "duration": 3094
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 633
+      "duration": 620
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 865
+      "duration": 1078
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 26830
+      "duration": 21293
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 33802
+      "duration": 33839
     },
     {
       "name": "file-upload",
       "status": "failed",
-      "duration": 58076,
-      "error": "HTTP 400 for PUT https://deo-dh-backend.testnet.datahaven-infra.network/buckets/0x8acab562b5ce72a7e7ce49402b91b278edcbe2d3afffca7efff07d21961817be/upload/0x507748f7bad2b56aff525502a3951d92b7aaa703c5792d3c3d20758f69d20049"
+      "duration": 57702,
+      "error": "HTTP 400 for PUT https://deo-dh-backend.testnet.datahaven-infra.network/buckets/0xe38b7a0ebe9de8f7d3c8d89f4713603b6d9c11aef9045740631f2c62c5764fa0/upload/0x589d901851b91f01b72c96ba24a26236a622559b706655ea45175e1d1ee8462c"
     },
     {
       "name": "file-download",
