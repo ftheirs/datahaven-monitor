@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "Health",
-  "message": "passed",
-  "color": "brightgreen",
+  "message": "failed",
+  "color": "red",
   "cacheSeconds": 300
 }
