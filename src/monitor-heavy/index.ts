@@ -239,6 +239,10 @@ const HEAVY_CONFIG = {
 
   // Waits/timeouts
   postStorageRequestBulkWaitMs: 10_000,
+  // Storage-request confirmation concurrency (receipts/finalization/on-chain visibility)
+  srConfirmConcurrency: 3,
+  // Spacing between SR submissions to reduce transient nonce/mempool issues
+  srSubmitSpacingMs: 250,
   // Ensure we don't try to upload "too soon" after issuing the on-chain storage request.
   // Stagenet can lag in backend indexing/authorization, leading to transient HTTP 403s.
   minIssueToUploadMs: 60_000,
@@ -250,7 +254,12 @@ const HEAVY_CONFIG = {
   storageRequestVisibleTimeoutMs: 2 * 60_000,
   deleteRetryDelaysMs: [30_000, 60_000, 90_000],
   storageRequestClearedTimeoutMs: 10 * 60_000, // 10 min per file
-  bucketReadyPoll: { retries: 240, delayMs: 3_000 }, // 12 min
+  // Readiness polling cadence:
+  // - We intentionally poll infrequently (every 30s) to reduce backend load and produce readable logs.
+  // - Total wait budget is 11 minutes.
+  readyPollIntervalMs: 30_000,
+  readyPollTotalMs: 11 * 60_000,
+  bucketReadyPoll: { retries: 220, delayMs: 3_000 }, // 11 min (used elsewhere)
 } as const;
 
 type FileSpec = {
@@ -329,13 +338,85 @@ async function waitUntilFilesReadyViaTree(
   console.log(
     `[monitor-heavy] Waiting for ${label} files to be ready via bucket getFiles...`,
   );
-  await pollBackend(async () => {
-    const resp = await mspClient.buckets.getFiles(bucketId);
-    const map = flattenFileTree(resp.files);
-    return fileKeys.every(
-      (fk) => map.get(fk.toLowerCase())?.status === "ready",
+
+  const deadline = Date.now() + HEAVY_CONFIG.readyPollTotalMs;
+  const delayMs = HEAVY_CONFIG.readyPollIntervalMs;
+  const lastStatus = new Map<string, string>(); // lower(fileKey) -> status
+  const formatStatus = (s: string): string => {
+    // Keep this stable/scan-friendly in CI output.
+    if (s === "ready") return "Ready";
+    if (s === "in_progress" || s === "inProgress") return "InProgress";
+    if (s === "missing") return "Missing";
+    return s;
+  };
+
+  let attempt = 0;
+  while (true) {
+    attempt += 1;
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
+
+    try {
+      const resp = await mspClient.buckets.getFiles(bucketId);
+      const map = flattenFileTree(resp.files);
+
+      let readyCount = 0;
+      for (const fk of fileKeys) {
+        const key = fk.toLowerCase();
+        const status = map.get(key)?.status ?? "missing";
+        if (status === "ready") readyCount++;
+
+        const prev = lastStatus.get(key);
+        if (prev !== "ready" && status === "ready") {
+          console.log(
+            `[monitor-heavy] ${label} file became ready: ${fk}`,
+          );
+        }
+        lastStatus.set(key, status);
+      }
+
+      // Print a full snapshot on EVERY poll (requested).
+      console.log("=".repeat(80));
+      console.log(
+        `[monitor-heavy] ${label} readiness snapshot (ready ${readyCount}/${fileKeys.length}, remaining=${Math.max(
+          0,
+          Math.round(remainingMs / 1000),
+        )}s):`,
+      );
+      fileKeys.forEach((fk, idx) => {
+        const st = formatStatus(lastStatus.get(fk.toLowerCase()) ?? "unknown");
+        console.log(`  ${idx + 1}) Filekey: ${fk} Status: ${st}`);
+      });
+      console.log("=".repeat(80));
+
+      if (readyCount === fileKeys.length) return;
+    } catch {
+      // ignore transient backend errors and continue polling
+    }
+
+    await sleep(delayMs);
+  }
+
+  // Timeout: print which fileKeys never reached "ready"
+  const missing = fileKeys.filter(
+    (fk) => lastStatus.get(fk.toLowerCase()) !== "ready",
+  );
+  console.log(
+    `[monitor-heavy] Timeout waiting for ${label} files to be ready. Missing (${missing.length}/${fileKeys.length}):`,
+  );
+  console.log(`[monitor-heavy] ${label} final status snapshot:`);
+  fileKeys.forEach((fk, idx) => {
+    const st = formatStatus(lastStatus.get(fk.toLowerCase()) ?? "unknown");
+    console.log(`  ${idx + 1}) Filekey: ${fk} Status: ${st}`);
+  });
+  for (const fk of missing) {
+    console.log(
+      `  - ${fk} (lastStatus=${lastStatus.get(fk.toLowerCase()) ?? "unknown"})`,
     );
-  }, HEAVY_CONFIG.bucketReadyPoll);
+  }
+  throw new Error(
+    `Timeout waiting for ${label} files to be ready (missing ${missing.length}/${fileKeys.length})`,
+  );
 }
 
 async function waitUntilFilesAbsentViaTree(
@@ -529,12 +610,25 @@ async function runMonitorHeavy(): Promise<void> {
       console.log(
         `[monitor-heavy] Issuing ${files.length} storage requests sequentially (replicas=${replicas})...`,
       );
-      for (const f of files) {
+      // Phase A: submit txs sequentially (nonce-safe), but don't wait for receipts here.
+      const submitted: Array<{ idx: number; file: FileSpec; tx: `0x${string}` }> =
+        [];
+
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i]!;
         if (!f.fingerprintHex || !f.fileKeyHex) {
           throw new Error(
             "File missing fingerprint/fileKey before issueStorageRequest",
           );
         }
+
+        const idx = i + 1;
+        const size = f.bytes.length;
+        console.log(
+          `[monitor-heavy] [SR ${idx}/${files.length}] fileKey=${f.fileKeyHex} size=${size}B fingerprint=${f.fingerprintHex}`,
+        );
+
+        const srStart = Date.now();
         const tx = await storageHubClient.issueStorageRequest(
           bucketId,
           f.location,
@@ -546,81 +640,153 @@ async function runMonitorHeavy(): Promise<void> {
           customReplicationTarget,
         );
         if (!tx) throw new Error("issueStorageRequest returned no tx hash");
-        const rcpt = await publicClient.waitForTransactionReceipt({ hash: tx });
-        if (rcpt.status !== "success")
-          throw new Error("issueStorageRequest failed");
-        f.storageRequestIssuedAtMs = Date.now();
+        console.log(`[monitor-heavy] [SR ${idx}/${files.length}] tx sent: ${tx}`);
+        submitted.push({ idx, file: f, tx: tx as `0x${string}` });
 
-        // DEEP DIFFERENCE vs regular monitor:
-        // The normal monitor waits for Substrate finalization and verifies the storage request
-        // exists on-chain before attempting upload. Without this, MSP can respond 403/404
-        // because the SR is not yet visible/indexed.
-        await waitForFinalization(userApi);
-        await waitForOnChainData(
-          () => userApi.query.fileSystem.storageRequests(f.fileKeyHex as `0x${string}`),
-          (sr) => !(sr as any).isNone,
-          { retries: Math.ceil(HEAVY_CONFIG.storageRequestVisibleTimeoutMs / 5_000), delayMs: 5_000 },
+        // small spacing to reduce transient nonce/mempool issues, but keep it fast
+        await sleep(HEAVY_CONFIG.srSubmitSpacingMs);
+
+        // keep a bit of visibility while submitting
+        console.log(
+          `[monitor-heavy] [SR ${idx}/${files.length}] submitted (t=${Date.now() - srStart}ms)`,
         );
-
-        // small spacing like stress test to avoid transient RPC nonce/fee issues
-        await sleep(500);
       }
-    }
 
-    async function uploadFilesParallel(files: FileSpec[]): Promise<void> {
+      // Phase B: confirm receipts/finalization/on-chain visibility concurrently (bounded).
       console.log(
-        `[monitor-heavy] Uploading ${files.length} files (concurrency=${HEAVY_CONFIG.uploadConcurrency})...`,
+        `[monitor-heavy] Confirming ${submitted.length} storage requests (concurrency=${HEAVY_CONFIG.srConfirmConcurrency})...`,
       );
       await withConcurrency(
-        files,
-        HEAVY_CONFIG.uploadConcurrency,
-        async (f) => {
-          if (!f.fileKeyHex) throw new Error("Missing fileKey for upload");
+        submitted,
+        HEAVY_CONFIG.srConfirmConcurrency,
+        async (item) => {
+          const { idx, file: f, tx } = item;
+          const start = Date.now();
+          const rcpt = await publicClient.waitForTransactionReceipt({ hash: tx });
+          if (rcpt.status !== "success") throw new Error("issueStorageRequest failed");
 
-          // Wait for MSP/backend to be ready to accept uploads for this SR.
-          // We enforce a minimum age since SR issuance, plus the existing per-network delay.
-          const issuedAt = f.storageRequestIssuedAtMs;
-          const minWait = Math.max(
-            network.delays.beforeUploadMs,
-            HEAVY_CONFIG.minIssueToUploadMs,
+          // Mark SR issuance time once we know the tx landed.
+          f.storageRequestIssuedAtMs = Date.now();
+
+          // Wait until the block that included this tx is finalized (best-effort).
+          try {
+            await userApi.wait.finalizedAtLeast(BigInt(rcpt.blockNumber));
+          } catch {
+            // fallback to a generic finalized head bump
+            await waitForFinalization(userApi);
+          }
+
+          await waitForOnChainData(
+            () =>
+              userApi.query.fileSystem.storageRequests(f.fileKeyHex as `0x${string}`),
+            (sr) => !(sr as any).isNone,
+            {
+              retries: Math.ceil(HEAVY_CONFIG.storageRequestVisibleTimeoutMs / 5_000),
+              delayMs: 5_000,
+            },
           );
-          if (issuedAt) {
-            const age = Date.now() - issuedAt;
-            if (age < minWait) await sleep(minWait - age);
-          } else {
-            await sleep(minWait);
-          }
 
-          // Fresh FileManager + Blob right before upload
-          const fm = new FileManager({
-            size: f.bytes.length,
-            stream: () =>
-              Readable.toWeb(
-                Readable.from(Buffer.from(f.bytes)),
-              ) as ReadableStream<Uint8Array>,
-          });
-          const blob = await fm.getFileBlob();
-          const res = await uploadWithRetry({
-            mspClient,
-            bucketId,
-            fileKey: f.fileKeyHex,
-            blob,
-            owner: account.address,
-            location: f.location,
-            reAuth,
-            retries: 5,
-            delayMs: HEAVY_CONFIG.uploadRetryBaseDelayMs,
-            maxTotalMs: HEAVY_CONFIG.uploadRetryMaxTotalMs,
-            maxDelayMs: HEAVY_CONFIG.uploadRetryMaxDelayMs,
-          });
-          if (res.status !== "upload_successful") {
-            throw new Error(`upload failed: ${res.status}`);
-          }
-          if (res.fileKey !== f.fileKeyHex) {
-            throw new Error("upload fileKey mismatch");
-          }
+          console.log(
+            `[monitor-heavy] [SR ${idx}/${files.length}] confirmed+visible (tx=${tx}) in ${Date.now() - start}ms`,
+          );
         },
       );
+    }
+
+    async function uploadFilesParallel(
+      files: FileSpec[],
+      label: string,
+    ): Promise<void> {
+      console.log(
+        `[monitor-heavy] Upload phase (${label}): uploading ${files.length} files (concurrency=${HEAVY_CONFIG.uploadConcurrency})...`,
+      );
+
+      const startedAt = Date.now();
+      const fileCount = files.length;
+      const status = new Map<string, "uploading" | "uploaded">(); // lower(fileKey) -> status
+      const started = new Map<string, number>(); // lower(fileKey) -> ms
+      let uploadedCount = 0;
+
+      const interval = setInterval(() => {
+        const uploadingCount = Array.from(status.values()).filter(
+          (s) => s === "uploading",
+        ).length;
+        const pendingCount = fileCount - uploadedCount - uploadingCount;
+        console.log(
+          `[monitor-heavy] Upload phase (${label}) progress: uploaded ${uploadedCount}/${fileCount}, uploading ${uploadingCount}, pending ${pendingCount} (elapsed=${Math.round(
+            (Date.now() - startedAt) / 1000,
+          )}s)`,
+        );
+      }, 30_000);
+
+      try {
+        await withConcurrency(
+          files,
+          HEAVY_CONFIG.uploadConcurrency,
+          async (f, idx) => {
+            if (!f.fileKeyHex) throw new Error("Missing fileKey for upload");
+            const fk = f.fileKeyHex;
+            const fkKey = fk.toLowerCase();
+            status.set(fkKey, "uploading");
+            started.set(fkKey, Date.now());
+            console.log(
+              `[monitor-heavy] Upload phase (${label}) start ${idx + 1}/${fileCount}: fileKey=${fk} size=${f.bytes.length}B`,
+            );
+
+            // Wait for MSP/backend to be ready to accept uploads for this SR.
+            // We enforce a minimum age since SR issuance, plus the existing per-network delay.
+            const issuedAt = f.storageRequestIssuedAtMs;
+            const minWait = Math.max(
+              network.delays.beforeUploadMs,
+              HEAVY_CONFIG.minIssueToUploadMs,
+            );
+            if (issuedAt) {
+              const age = Date.now() - issuedAt;
+              if (age < minWait) await sleep(minWait - age);
+            } else {
+              await sleep(minWait);
+            }
+
+            // Fresh FileManager + Blob right before upload
+            const fm = new FileManager({
+              size: f.bytes.length,
+              stream: () =>
+                Readable.toWeb(
+                  Readable.from(Buffer.from(f.bytes)),
+                ) as ReadableStream<Uint8Array>,
+            });
+            const blob = await fm.getFileBlob();
+            const res = await uploadWithRetry({
+              mspClient,
+              bucketId,
+              fileKey: f.fileKeyHex,
+              blob,
+              owner: account.address,
+              location: f.location,
+              reAuth,
+              retries: 5,
+              delayMs: HEAVY_CONFIG.uploadRetryBaseDelayMs,
+              maxTotalMs: HEAVY_CONFIG.uploadRetryMaxTotalMs,
+              maxDelayMs: HEAVY_CONFIG.uploadRetryMaxDelayMs,
+            });
+            if (res.status !== "upload_successful") {
+              throw new Error(`upload failed: ${res.status}`);
+            }
+            if (res.fileKey !== f.fileKeyHex) {
+              throw new Error("upload fileKey mismatch");
+            }
+
+            status.set(fkKey, "uploaded");
+            uploadedCount += 1;
+            const durMs = Date.now() - (started.get(fkKey) ?? Date.now());
+            console.log(
+              `[monitor-heavy] Upload phase (${label}) done ${idx + 1}/${fileCount}: fileKey=${fk} (${durMs}ms) uploaded ${uploadedCount}/${fileCount}`,
+            );
+          },
+        );
+      } finally {
+        clearInterval(interval);
+      }
     }
 
     async function waitReady(files: FileSpec[], label: string): Promise<void> {
@@ -631,19 +797,57 @@ async function runMonitorHeavy(): Promise<void> {
         `[monitor-heavy] Waiting for ${label} files to be ready (chain + backend)...`,
       );
 
-      // Chain: wait storage request cleared (fulfilled)
-      await withConcurrency(
-        fileKeys,
-        HEAVY_CONFIG.uploadConcurrency,
-        async (fk) => {
-          await waitForStorageRequestCleared(
-            userApi,
-            fk,
-            HEAVY_CONFIG.storageRequestClearedTimeoutMs,
-            3_000,
+      // Chain: poll storageRequests(fileKey) once per 30s and print a full table each time.
+      {
+        const deadline = Date.now() + HEAVY_CONFIG.readyPollTotalMs;
+        const delayMs = HEAVY_CONFIG.readyPollIntervalMs;
+        const last = new Map<string, "Present" | "Cleared">();
+
+        while (true) {
+          const remainingMs = deadline - Date.now();
+          if (remainingMs <= 0) break;
+
+          // Query all fileKeys with bounded concurrency
+          await withConcurrency(
+            fileKeys,
+            HEAVY_CONFIG.uploadConcurrency,
+            async (fk) => {
+              const sr = await userApi.query.fileSystem.storageRequests(fk);
+              last.set(fk.toLowerCase(), (sr as any).isNone ? "Cleared" : "Present");
+            },
           );
-        },
-      );
+
+          const clearedCount = fileKeys.filter(
+            (fk) => last.get(fk.toLowerCase()) === "Cleared",
+          ).length;
+
+          console.log("=".repeat(80));
+          console.log(
+            `[monitor-heavy] ${label} chain snapshot (cleared ${clearedCount}/${fileKeys.length}, remaining=${Math.max(
+              0,
+              Math.round(remainingMs / 1000),
+            )}s):`,
+          );
+          fileKeys.forEach((fk, idx) => {
+            console.log(
+              `  ${idx + 1}) Filekey: ${fk} Status: ${last.get(fk.toLowerCase()) ?? "Unknown"}`,
+            );
+          });
+          console.log("=".repeat(80));
+
+          if (clearedCount === fileKeys.length) break;
+          await sleep(delayMs);
+        }
+
+        const clearedCount = fileKeys.filter(
+          (fk) => last.get(fk.toLowerCase()) === "Cleared",
+        ).length;
+        if (clearedCount !== fileKeys.length) {
+          throw new Error(
+            `Timeout waiting for ${label} storageRequests to clear (cleared ${clearedCount}/${fileKeys.length})`,
+          );
+        }
+      }
 
       // Backend: wait status ready in file tree
       await waitUntilFilesReadyViaTree(mspClient, bucketId, fileKeys, label);
@@ -755,7 +959,7 @@ async function runMonitorHeavy(): Promise<void> {
     // 3) Upload all files in parallel and wait until all ready
     await sleep(HEAVY_CONFIG.postStorageRequestBulkWaitMs);
     beginPhase("upload-batch1");
-    await uploadFilesParallel(initialFiles);
+    await uploadFilesParallel(initialFiles, "batch1");
     await waitReady(initialFiles, "batch1");
     endPhasePassed();
 
@@ -783,7 +987,7 @@ async function runMonitorHeavy(): Promise<void> {
     // 6) Wait for them to be ready
     await sleep(HEAVY_CONFIG.postStorageRequestBulkWaitMs);
     beginPhase("upload-batch2");
-    await uploadFilesParallel(newFiles);
+    await uploadFilesParallel(newFiles, "batch2");
     await waitReady(newFiles, "batch2");
     endPhasePassed();
 
