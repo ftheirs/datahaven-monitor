@@ -1,43 +1,43 @@
 {
-  "timestamp": "2025-12-26T19:22:32.154Z",
+  "timestamp": "2025-12-26T19:37:09.089Z",
   "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 4,
+    "passed": 5,
     "failed": 1,
-    "skipped": 4
+    "skipped": 3
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2095
+      "duration": 2285
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 456
+      "duration": 595
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 584
+      "duration": 662
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 20292
+      "duration": 24272
     },
     {
       "name": "storage-request",
-      "status": "failed",
-      "duration": 721,
-      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0x73887188cf8e1adfd76287028a03eff975bc3de555c6ee1e4ef7524e81730a12, 0x61646f6c706875732e6a7067, 0x34eb5f637e05fc18f857ccb013250076534192189894d174ee3aa6d3525f6970, 416400, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f574e456f723669694541625a684358714a62586962646a6574684459386f65446f6965565678705a6851635731\"], 5, 1)\n  sender:    0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
+      "status": "passed",
+      "duration": 34057
     },
     {
       "name": "file-upload",
-      "status": "skipped",
-      "duration": 0
+      "status": "failed",
+      "duration": 57473,
+      "error": "HTTP 400 for PUT https://deo-dh-backend.testnet.datahaven-infra.network/buckets/0xae8957497c5176521c4d987ed5d0753e0c74bd8cb7e98d19fa7d93e3c74b4db7/upload/0xe58548c5dfc40aa9f30a60fc9734c83b4d3f8ad665e0f1869bb6f7cba1cb4a66"
     },
     {
       "name": "file-download",
