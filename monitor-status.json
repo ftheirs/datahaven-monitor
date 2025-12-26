@@ -1,38 +1,38 @@
 {
-  "timestamp": "2025-12-26T19:20:47.191Z",
+  "timestamp": "2025-12-26T19:22:32.154Z",
   "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 3,
+    "passed": 4,
     "failed": 1,
-    "skipped": 5
+    "skipped": 4
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 3156
+      "duration": 2095
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 624
+      "duration": 456
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 850
+      "duration": 584
     },
     {
       "name": "bucket-create",
-      "status": "failed",
-      "duration": 2226,
-      "error": "The contract function \"createBucket\" reverted with the following reason:\nDispatched call failed with error: Module(ModuleError { index: 80, error: [6, 0, 0, 0], message: Some(\"NotEnoughBalance\") })\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373636373736383435323537, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0\n\nDocs: https://viem.sh/docs/contract/estimateContractGas\nVersion: viem@2.41.2"
+      "status": "passed",
+      "duration": 20292
     },
     {
       "name": "storage-request",
-      "status": "skipped",
-      "duration": 0
+      "status": "failed",
+      "duration": 721,
+      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0x73887188cf8e1adfd76287028a03eff975bc3de555c6ee1e4ef7524e81730a12, 0x61646f6c706875732e6a7067, 0x34eb5f637e05fc18f857ccb013250076534192189894d174ee3aa6d3525f6970, 416400, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f574e456f723669694541625a684358714a62586962646a6574684459386f65446f6965565678705a6851635731\"], 5, 1)\n  sender:    0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     },
     {
       "name": "file-upload",
