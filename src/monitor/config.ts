@@ -47,7 +47,7 @@ export const STAGENET_CONFIG: NetworkConfig = {
 	delays: {
 		postStorageRequestMs: 10_000,
 		beforeUploadMs: 15_000,
-		postFileDeletionMs: 10_000,
+		postFileDeletionMs: 300_000,
 		postBucketDeletionMs: 5_000,
 	},
 };
@@ -73,7 +73,7 @@ export const TESTNET_CONFIG: NetworkConfig = {
 	delays: {
 		postStorageRequestMs: 10_000,
 		beforeUploadMs: 15_000,
-		postFileDeletionMs: 10_000,
+		postFileDeletionMs: 300_000,
 		postBucketDeletionMs: 5_000,
 	},
 };
