@@ -1,43 +1,43 @@
 {
-  "timestamp": "2025-12-27T15:54:15.406Z",
+  "timestamp": "2025-12-27T16:27:39.611Z",
   "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 5,
+    "passed": 3,
     "failed": 1,
-    "skipped": 3
+    "skipped": 5
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 3013
+      "duration": 3001
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 752
+      "duration": 634
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 887
+      "duration": 1391
     },
     {
       "name": "bucket-create",
-      "status": "passed",
-      "duration": 23955
+      "status": "failed",
+      "duration": 2216,
+      "error": "The contract function \"createBucket\" reverted with the following reason:\nDispatched call failed with error: Module(ModuleError { index: 80, error: [6, 0, 0, 0], message: Some(\"NotEnoughBalance\") })\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373636383532383537373132, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0\n\nDocs: https://viem.sh/docs/contract/estimateContractGas\nVersion: viem@2.41.2"
     },
     {
       "name": "storage-request",
-      "status": "passed",
-      "duration": 33808
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-upload",
-      "status": "failed",
-      "duration": 58069,
-      "error": "HTTP 400 for PUT https://deo-dh-backend.testnet.datahaven-infra.network/buckets/0x5d227daed2632d3205cf13ed884cac9306c1b3222bc7413ac2efc1287e10c416/upload/0x9ba74e51e9463ef3aeb6575024d6b055c86a2be8c41c9b05f744393edbdb097b"
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-download",
