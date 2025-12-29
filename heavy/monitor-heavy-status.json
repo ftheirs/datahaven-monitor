@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-12-29T03:36:01.257Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Testnet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 689929,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 1048576,
+    "uploadConcurrency": 3,
+    "batch1Replicas": 1,
+    "batch2Replicas": 2
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "failed",
+      "durationMs": 689924,
+      "error": "Timeout waiting for MSP backend (660000ms)"
+    }
+  ]
+}
