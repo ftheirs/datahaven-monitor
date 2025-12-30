@@ -1,4 +1,4 @@
-name: Monitor Heavy – Testnet Sentinel
+name: Monitor Heavy – Stagenet Sentinel
 
 on:
   schedule:
@@ -33,7 +33,7 @@ jobs:
       - name: Run monitor-heavy
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
-          DATAHAVEN_NETWORK: testnet
+          DATAHAVEN_NETWORK: stagenet
           MONITOR_OUTPUT_DIR: badges-heavy
         run: bun run monitor-heavy
 
@@ -228,7 +228,7 @@ jobs:
           curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"$EMOJI Testnet Sentinel - Monitor Heavy $TITLE\",
+              \"text\": \"$EMOJI Stagenet Sentinel - Monitor Heavy $TITLE\",
               \"attachments\": [
                 {
                   \"color\": \"$COLOR\",
@@ -249,7 +249,7 @@ jobs:
                       \"short\": false
                     }
                   ],
-                  \"footer\": \"Testnet Sentinel\",
+                  \"footer\": \"Stagenet Sentinel\",
                   \"ts\": $(date +%s)
                 }
               ]
