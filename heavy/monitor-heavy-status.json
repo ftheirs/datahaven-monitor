@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-12-30T19:51:51.625Z",
+  "timestamp": "2025-12-30T20:00:46.164Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Stagenet",
-  "overall": "failed",
+  "overall": "success",
   "summary": {
-    "durationMs": 28863,
+    "durationMs": 1092705,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,14 +19,49 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 23269
+      "durationMs": 15688
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
-      "status": "failed",
-      "durationMs": 5444,
-      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0x46627fcf6d86c43a0ab5fd5175d0948ad2641b9f82229c9d6141871c82fc1f97, 0x68656176792d612d313736373132343330363035322d362d3937373634372e62696e, 0x9fbc0563b30a0e7614f5dfaa1af84eb2e6a846d89b88b15b9ecbfbca608205d9, 977647, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f57504c695756667653395a7a425a6b503861454c6f58314d515233466d4b686168356e7a574471323463357a67\"], 0, 0)\n  sender:    0xB08b99C8A81ae34D391Ff9f078d32c808aE619fE\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
+      "status": "passed",
+      "durationMs": 24203
+    },
+    {
+      "name": "upload-batch1",
+      "label": "Upload (Batch 1)",
+      "status": "passed",
+      "durationMs": 328026
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 178873
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 22697
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
+      "status": "passed",
+      "durationMs": 319721
+    },
+    {
+      "name": "file-delete-all10",
+      "label": "Delete All",
+      "status": "passed",
+      "durationMs": 164675
+    },
+    {
+      "name": "bucket-delete",
+      "label": "Bucket Delete",
+      "status": "passed",
+      "durationMs": 18618
     }
   ]
 }
