@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-12-30T18:12:10.512Z",
+  "timestamp": "2025-12-30T18:27:02.286Z",
   "monitor": "monitor-heavy",
-  "network": "DataHaven Testnet",
-  "overall": "success",
+  "network": "DataHaven Stagenet",
+  "overall": "failed",
   "summary": {
-    "durationMs": 1714602,
+    "durationMs": 19757,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -12,56 +12,21 @@
     "maxFileSizeBytes": 1048576,
     "uploadConcurrency": 3,
     "batch1Replicas": 1,
-    "batch2Replicas": 2
+    "batch2Replicas": 1
   },
   "phases": [
     {
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 22638
+      "durationMs": 18934
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
-      "status": "passed",
-      "durationMs": 26460
-    },
-    {
-      "name": "upload-batch1",
-      "label": "Upload (Batch 1)",
-      "status": "passed",
-      "durationMs": 510396
-    },
-    {
-      "name": "file-delete-first5",
-      "label": "Delete Half",
-      "status": "passed",
-      "durationMs": 220310
-    },
-    {
-      "name": "storage-request-batch2",
-      "label": "Storage Req (Batch 2)",
-      "status": "passed",
-      "durationMs": 21764
-    },
-    {
-      "name": "upload-batch2",
-      "label": "Upload (Batch 2)",
-      "status": "passed",
-      "durationMs": 501248
-    },
-    {
-      "name": "file-delete-all10",
-      "label": "Delete All",
-      "status": "passed",
-      "durationMs": 370570
-    },
-    {
-      "name": "bucket-delete",
-      "label": "Bucket Delete",
-      "status": "passed",
-      "durationMs": 21024
+      "status": "failed",
+      "durationMs": 669,
+      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0x0ffc1b166e400d718d18fc81ffbb4688e95bbf3e73fc7843593d9dd2b21b498c, 0x68656176792d612d313736373131393232313437332d302d3636353630382e62696e, 0xf6ba30d3071676f6193139202cc50e3d6b81624fa2c9a821daa8b23ab866cb64, 665608, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f57504c695756667653395a7a425a6b503861454c6f58314d515233466d4b686168356e7a574471323463357a67\"], 0, 0)\n  sender:    0xB08b99C8A81ae34D391Ff9f078d32c808aE619fE\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     }
   ]
 }
