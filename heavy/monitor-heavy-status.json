@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-12-30T21:50:47.421Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Stagenet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 18846,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 1048576,
+    "uploadConcurrency": 3,
+    "batch1Replicas": 1,
+    "batch2Replicas": 1
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "passed",
+      "durationMs": 18038
+    },
+    {
+      "name": "storage-request-batch1",
+      "label": "Storage Req (Batch 1)",
+      "status": "failed",
+      "durationMs": 658,
+      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0x6e7c3aea94b4b1f251c726a3e733269bf5d79eeb7f5283f3a2cf6cc96510d819, 0x68656176792d612d313736373133313434363632302d302d3139323036352e62696e, 0x5984ce83eaba1d325aa35358d0dcd295bad43f9884b88c420f7e6acd6fc121a1, 192065, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f57504c695756667653395a7a425a6b503861454c6f58314d515233466d4b686168356e7a574471323463357a67\"], 0, 0)\n  sender:    0xB08b99C8A81ae34D391Ff9f078d32c808aE619fE\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
+    }
+  ]
+}
