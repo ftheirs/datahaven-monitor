@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-01-01T19:55:28.746Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Stagenet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 783243,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 1048576,
+    "uploadConcurrency": 3,
+    "batch1Replicas": 1,
+    "batch2Replicas": 1
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "passed",
+      "durationMs": 30404
+    },
+    {
+      "name": "storage-request-batch1",
+      "label": "Storage Req (Batch 1)",
+      "status": "passed",
+      "durationMs": 23286
+    },
+    {
+      "name": "upload-batch1",
+      "label": "Upload (Batch 1)",
+      "status": "failed",
+      "durationMs": 719415,
+      "error": "Timeout waiting for batch1 storageRequests to clear (cleared 9/10)"
+    }
+  ]
+}
