@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-01-03T12:01:27.964Z",
+  "timestamp": "2026-01-03T12:01:46.896Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 1931351,
+    "durationMs": 678880,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,38 +19,32 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 17162
+      "durationMs": 15771
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 22689
+      "durationMs": 30306
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 324743
+      "durationMs": 382369
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
       "status": "passed",
-      "durationMs": 211740
+      "durationMs": 239259
     },
     {
       "name": "storage-request-batch2",
       "label": "Storage Req (Batch 2)",
-      "status": "passed",
-      "durationMs": 22404
-    },
-    {
-      "name": "upload-batch2",
-      "label": "Upload (Batch 2)",
       "status": "failed",
-      "durationMs": 1312423,
-      "error": "Timeout waiting for batch2 files to be ready (missing 1/5)"
+      "durationMs": 969,
+      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0xb6b4496bff809ae4455e3ee69af0be541321d45311c252349ca644b74fde1b06, 0x68656176792d622d313736373434313730353837392d302d3336383636302e62696e, 0xefede49f6a2fad6fd78150aa2988ba5ac7cb3c4c2e963df8acb6d67df62ae782, 368660, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f574e456f723669694541625a684358714a62586962646a6574684459386f65446f6965565678705a6851635731\"], 5, 2)\n  sender:    0xB08b99C8A81ae34D391Ff9f078d32c808aE619fE\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     }
   ]
 }
