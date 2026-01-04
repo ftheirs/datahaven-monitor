@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-01-04T23:06:22.640Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Testnet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 772620,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 1048576,
+    "uploadConcurrency": 3,
+    "batch1Replicas": 1,
+    "batch2Replicas": 2
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "passed",
+      "durationMs": 22156
+    },
+    {
+      "name": "storage-request-batch1",
+      "label": "Storage Req (Batch 1)",
+      "status": "passed",
+      "durationMs": 22237
+    },
+    {
+      "name": "upload-batch1",
+      "label": "Upload (Batch 1)",
+      "status": "passed",
+      "durationMs": 416314
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 298432
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "failed",
+      "durationMs": 3278,
+      "error": "The contract function \"issueStorageRequest\" reverted with the following reason:\nreplacement transaction underpriced\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  issueStorageRequest(bytes32 bucketId, bytes location, bytes32 fingerprint, uint64 size, bytes32 mspId, bytes[] peerIds, uint8 replicationTarget, uint32 customReplicationTarget)\n  args:                         (0x70116be47b2f366032182fe2b7230f8c1264f48cc68c7bb5ac6f7272da28a344, 0x68656176792d622d313736373536373937393332312d342d313034363134342e62696e, 0x5b409eead3c9878991f6f07dade3b6a72f98a535f7e0d382a7ee401a63961de8, 1046144, 0x0000000000000000000000000000000000000000000000000000000000000001, [\"0x313244334b6f6f574e456f723669694541625a684358714a62586962646a6574684459386f65446f6965565678705a6851635731\"], 5, 2)\n  sender:    0xB08b99C8A81ae34D391Ff9f078d32c808aE619fE\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
+    }
+  ]
+}
