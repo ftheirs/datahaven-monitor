@@ -1,57 +1,58 @@
 {
-  "timestamp": "2026-01-06T15:06:43.655Z",
-  "overall": "success",
+  "timestamp": "2026-01-06T15:40:19.389Z",
+  "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 9,
-    "failed": 0,
-    "skipped": 0
+    "passed": 5,
+    "failed": 1,
+    "skipped": 3
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2787
+      "duration": 1986
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 497
+      "duration": 329
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 1048
+      "duration": 588
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 26469
+      "duration": 29393
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 33984
+      "duration": 34009
     },
     {
       "name": "file-upload",
-      "status": "passed",
-      "duration": 49371
+      "status": "failed",
+      "duration": 397876,
+      "error": "WebSocket is not connected\nFailed WS Request: {\"method\":\"state_getStorage\",\"params\":[\"0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7\",\"0x4b88248838cf378f3b72460a309e21c9fc7ad6cbd7c366d7cae4a5e802c1ac7b\"]}"
     },
     {
       "name": "file-download",
-      "status": "passed",
-      "duration": 797
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-delete",
-      "status": "passed",
-      "duration": 384035
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "bucket-delete",
-      "status": "passed",
-      "duration": 35385
+      "status": "skipped",
+      "duration": 0
     }
   ]
 }
