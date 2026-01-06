@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "Monitor Heavy",
-  "message": "failed (6/7 passed)",
+  "message": "failed (2/3 passed)",
   "color": "red",
   "cacheSeconds": 300
 }
