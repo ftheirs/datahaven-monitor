@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-06T15:40:19.389Z",
+  "timestamp": "2026-01-06T16:08:09.506Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,33 +11,33 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 1986
+      "duration": 2536
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 329
+      "duration": 528
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 588
+      "duration": 866
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 29393
+      "duration": 22015
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 34009
+      "duration": 40715
     },
     {
       "name": "file-upload",
       "status": "failed",
-      "duration": 397876,
-      "error": "WebSocket is not connected\nFailed WS Request: {\"method\":\"state_getStorage\",\"params\":[\"0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7\",\"0x4b88248838cf378f3b72460a309e21c9fc7ad6cbd7c366d7cae4a5e802c1ac7b\"]}"
+      "duration": 675685,
+      "error": "Timeout waiting for StorageRequestFulfilled"
     },
     {
       "name": "file-download",
