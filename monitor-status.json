@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-07T08:42:44.118Z",
+  "timestamp": "2026-01-07T09:10:12.928Z",
   "overall": "success",
   "summary": {
     "total": 9,
@@ -11,47 +11,47 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 1870
+      "duration": 2023
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 384
+      "duration": 344
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 785
+      "duration": 575
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 22650
+      "duration": 20243
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 33934
+      "duration": 33919
     },
     {
       "name": "file-upload",
       "status": "passed",
-      "duration": 49275
+      "duration": 38535
     },
     {
       "name": "file-download",
       "status": "passed",
-      "duration": 516
+      "duration": 416
     },
     {
       "name": "file-delete",
       "status": "passed",
-      "duration": 366385
+      "duration": 342387
     },
     {
       "name": "bucket-delete",
       "status": "passed",
-      "duration": 35860
+      "duration": 34587
     }
   ]
 }
