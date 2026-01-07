@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-07T11:53:03.217Z",
+  "timestamp": "2026-01-07T12:04:20.072Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,42 +11,42 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2724
+      "duration": 1980
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 621
+      "duration": 359
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 880
+      "duration": 577
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 26966
+      "duration": 21286
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 33817
+      "duration": 33941
     },
     {
       "name": "file-upload",
       "status": "passed",
-      "duration": 49435
+      "duration": 43883
     },
     {
       "name": "file-download",
       "status": "passed",
-      "duration": 664
+      "duration": 426
     },
     {
       "name": "file-delete",
       "status": "failed",
-      "duration": 474821,
+      "duration": 474273,
       "error": "File not removed from bucket in time"
     },
     {
