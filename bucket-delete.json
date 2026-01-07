@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "Bucket Delete",
-  "message": "passed",
-  "color": "brightgreen",
+  "message": "skipped",
+  "color": "lightgrey",
   "cacheSeconds": 300
 }
