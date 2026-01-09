@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-09T09:01:35.363Z",
+  "timestamp": "2026-01-09T09:43:02.968Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,12 +11,12 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2881
+      "duration": 2226
     },
     {
       "name": "health",
       "status": "failed",
-      "duration": 648,
+      "duration": 550,
       "error": "HTTP 503 for GET https://deo-dh-backend.testnet.datahaven-infra.network/health"
     },
     {
