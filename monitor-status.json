@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-13T17:16:10.366Z",
+  "timestamp": "2026-01-13T17:56:08.868Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,33 +11,33 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 3194
+      "duration": 2005
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 658
+      "duration": 615
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 1178
+      "duration": 999
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 24135
+      "duration": 24865
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 33889
+      "duration": 33999
     },
     {
       "name": "file-upload",
       "status": "failed",
-      "duration": 676062,
-      "error": "Timeout waiting for finalized event"
+      "duration": 675610,
+      "error": "Timeout waiting for StorageRequestFulfilled"
     },
     {
       "name": "file-download",
