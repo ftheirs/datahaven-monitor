@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-01-13T23:29:38.029Z",
+  "timestamp": "2026-01-13T23:46:58.429Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
-  "overall": "success",
+  "overall": "failed",
   "summary": {
-    "durationMs": 744465,
+    "durationMs": 471062,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,49 +19,20 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 19270
+      "durationMs": 21519
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 28024
+      "durationMs": 26502
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
-      "status": "passed",
-      "durationMs": 293596
-    },
-    {
-      "name": "file-delete-first5",
-      "label": "Delete Half",
-      "status": "passed",
-      "durationMs": 124979
-    },
-    {
-      "name": "storage-request-batch2",
-      "label": "Storage Req (Batch 2)",
-      "status": "passed",
-      "durationMs": 21675
-    },
-    {
-      "name": "upload-batch2",
-      "label": "Upload (Batch 2)",
-      "status": "passed",
-      "durationMs": 106901
-    },
-    {
-      "name": "file-delete-all10",
-      "label": "Delete All",
-      "status": "passed",
-      "durationMs": 111085
-    },
-    {
-      "name": "bucket-delete",
-      "label": "Bucket Delete",
-      "status": "passed",
-      "durationMs": 18731
+      "status": "failed",
+      "durationMs": 412916,
+      "error": "WebSocket is not connected\nFailed WS Request: {\"method\":\"state_queryStorageAt\",\"params\":[[\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a672c7df0bf554cba3df982b8845d31867d1781dfe4f51bb61d4f04b928daeb436914d1467f48edb35be1fcc6cf06038d83\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a6772293fb78fd8ab3493e4c0207a5d739ae52e33eb7f728e56645dece3817ef33946f8a2d08a4b2f3502b24647944d0a81\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a676a794d66d9fd0dce932ab262e7ec94adedea195a2419bc127563207daf617f322e8c1af5290486a6fe16a4b34ed03863\"]]}"
     }
   ]
 }
