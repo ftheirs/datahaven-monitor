@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-15T19:46:52.721Z",
+  "timestamp": "2026-01-15T20:28:29.930Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,23 +11,23 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2925
+      "duration": 2511
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 476
+      "duration": 600
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 833
+      "duration": 908
     },
     {
       "name": "bucket-create",
       "status": "failed",
-      "duration": 2170,
-      "error": "The contract function \"createBucket\" reverted with the following reason:\nDispatched call failed with error: Module(ModuleError { index: 80, error: [6, 0, 0, 0], message: Some(\"NotEnoughBalance\") })\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373638353036343130383433, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0\n\nDocs: https://viem.sh/docs/contract/estimateContractGas\nVersion: viem@2.41.2"
+      "duration": 1821,
+      "error": "The contract function \"createBucket\" reverted with the following reason:\nDispatched call failed with error: Module(ModuleError { index: 80, error: [6, 0, 0, 0], message: Some(\"NotEnoughBalance\") })\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373638353038393038333530, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0\n\nDocs: https://viem.sh/docs/contract/estimateContractGas\nVersion: viem@2.41.2"
     },
     {
       "name": "storage-request",
