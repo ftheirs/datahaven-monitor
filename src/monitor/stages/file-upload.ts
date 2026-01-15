@@ -4,7 +4,10 @@ import { readFile } from "node:fs/promises";
 import { TypeRegistry } from "@polkadot/types";
 import { FileManager, initWasm } from "@storagehub-sdk/core";
 import type { FileManager as FM } from "@storagehub-sdk/core";
-import { pollBackend, waitForStorageRequestFulfilled } from "../utils/waits";
+import {
+	waitForMspFileReadyWithSnapshot,
+	waitForStorageRequestFulfilled,
+} from "../utils/waits";
 import type { MonitorContext } from "../types";
 import { sleep } from "../../util/helpers";
 
@@ -135,30 +138,27 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
 
 	// Listen for on-chain fulfillment
 	console.log("[file-upload] Listening for StorageRequestFulfilled event...");
+	const srStart = Date.now();
 	const blockHash = await waitForStorageRequestFulfilled(
 		ctx.userApi,
 		fileKeyHex as `0x${string}`,
 	);
 	console.log(
-		`[file-upload] StorageRequestFulfilled seen in block ${blockHash}`,
+		`[file-upload] StorageRequestFulfilled seen in block ${blockHash} (${Date.now() - srStart}ms)`,
 	);
 
-	// Wait for file to be indexed by MSP backend
-	console.log("[file-upload] Waiting for file to be indexed by MSP backend...");
-	await pollBackend(
-		async () => {
-			try {
-				const fileInfo = await ctx.mspClient!.files.getFileInfo(
-					ctx.bucketId!,
-					fileKeyHex,
-				);
-				return fileInfo && fileInfo.fileKey === fileKeyHex;
-			} catch {
-				return false;
-			}
+	// Wait for file to be ready in MSP backend (shows in-progress/ready)
+	const mspReadyStart = Date.now();
+	await waitForMspFileReadyWithSnapshot(
+		ctx.mspClient!,
+		ctx.bucketId!,
+		fileKeyHex as `0x${string}`,
+		{
+			label: "file-upload",
 		},
-		// Align with monitor-heavy tolerance: allow longer for indexing/propagation.
-		{ retries: 220, delayMs: 3000 }, // ~11 minutes
+	);
+	console.log(
+		`[file-upload] MSP file ready (${Date.now() - mspReadyStart}ms)`,
 	);
 
 	// Store the final fileKey in context for subsequent stages

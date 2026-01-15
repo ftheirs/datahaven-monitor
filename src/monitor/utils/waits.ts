@@ -1,5 +1,6 @@
 // Wait and polling utilities for monitor
 
+import type { FileTree, MspClient } from "@storagehub-sdk/msp-client";
 import { sleep } from "../../util/helpers";
 import type { EnrichedUserApi } from "../../userApi";
 
@@ -107,4 +108,94 @@ export async function waitForStorageRequestCleared(
 		}
 		await sleep(stepMs);
 	}
+}
+
+function findFileStatus(
+	files: FileTree[],
+	fileKey: `0x${string}`,
+): string | undefined {
+	const target = fileKey.toLowerCase();
+	const stack: FileTree[] = [...files];
+	while (stack.length > 0) {
+		const node = stack.pop()!;
+		if (node.type === "file") {
+			if (node.fileKey.toLowerCase() === target) return node.status;
+		} else {
+			stack.push(...node.children);
+		}
+	}
+	return undefined;
+}
+
+function formatMspStatus(status: string): string {
+	if (status === "ready") return "Ready";
+	if (status === "in_progress" || status === "inProgress") return "InProgress";
+	if (status === "missing") return "Missing";
+	return status;
+}
+
+/**
+ * Wait for MSP file status to become ready, with snapshot logging.
+ */
+export async function waitForMspFileReadyWithSnapshot(
+	mspClient: MspClient,
+	bucketId: `0x${string}`,
+	fileKey: `0x${string}`,
+	{
+		timeoutMs = 660_000,
+		intervalMs = 30_000,
+		label = "file",
+	}: {
+		timeoutMs?: number;
+		intervalMs?: number;
+		label?: string;
+	} = {},
+): Promise<void> {
+	console.log(
+		`[${label}] Waiting for MSP file to be ready via bucket getFiles...`,
+	);
+	const deadline = Date.now() + timeoutMs;
+	let lastStatus: string | undefined;
+	let attempt = 0;
+
+	while (true) {
+		attempt += 1;
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
+
+		try {
+			const resp = await mspClient.buckets.getFiles(bucketId);
+			const status = findFileStatus(resp.files, fileKey) ?? "missing";
+
+			if (lastStatus !== "ready" && status === "ready") {
+				console.log(`[${label}] MSP file became ready: ${fileKey}`);
+			}
+			lastStatus = status;
+
+			console.log("=".repeat(80));
+			console.log(
+				`[${label}] MSP status snapshot (attempt ${attempt}, remaining=${Math.max(
+					0,
+					Math.round(remainingMs / 1000),
+				)}s):`,
+			);
+			console.log(
+				`  Filekey: ${fileKey} Status: ${formatMspStatus(lastStatus)}`,
+			);
+			console.log("=".repeat(80));
+
+			if (status === "ready") return;
+		} catch {
+			// ignore transient backend errors and continue polling
+		}
+
+		await sleep(intervalMs);
+	}
+
+	console.log(
+		`[${label}] Timeout waiting for MSP file to be ready (lastStatus=${formatMspStatus(
+			lastStatus ?? "unknown",
+		)})`,
+	);
+	throw new Error("Timeout waiting for MSP file to be ready");
 }
