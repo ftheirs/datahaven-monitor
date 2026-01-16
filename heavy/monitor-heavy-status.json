@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-01-16T15:12:32.455Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Testnet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 1453607,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 1048576,
+    "uploadConcurrency": 3,
+    "batch1Replicas": 1,
+    "batch2Replicas": 2
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "passed",
+      "durationMs": 21510
+    },
+    {
+      "name": "storage-request-batch1",
+      "label": "Storage Req (Batch 1)",
+      "status": "passed",
+      "durationMs": 21275
+    },
+    {
+      "name": "upload-batch1",
+      "label": "Upload (Batch 1)",
+      "status": "passed",
+      "durationMs": 509219
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 309671
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 22413
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
+      "status": "failed",
+      "durationMs": 549281,
+      "error": "upload failed after retry window elapsed"
+    }
+  ]
+}
