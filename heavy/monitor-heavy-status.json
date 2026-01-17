@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-01-17T07:57:57.341Z",
+  "monitor": "monitor-heavy",
+  "network": "DataHaven Testnet",
+  "overall": "failed",
+  "summary": {
+    "durationMs": 516286,
+    "initialFileCount": 10,
+    "deleteFirstCount": 5,
+    "secondBatchCount": 5,
+    "minFileSizeBytes": 102400,
+    "maxFileSizeBytes": 1048576,
+    "uploadConcurrency": 3,
+    "batch1Replicas": 1,
+    "batch2Replicas": 2
+  },
+  "phases": [
+    {
+      "name": "bucket-create",
+      "label": "Bucket Create",
+      "status": "passed",
+      "durationMs": 19216
+    },
+    {
+      "name": "storage-request-batch1",
+      "label": "Storage Req (Batch 1)",
+      "status": "passed",
+      "durationMs": 27871
+    },
+    {
+      "name": "upload-batch1",
+      "label": "Upload (Batch 1)",
+      "status": "passed",
+      "durationMs": 199631
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 175525
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 21938
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
+      "status": "failed",
+      "durationMs": 51869,
+      "error": "HTTP 502 for PUT https://deo-dh-backend.testnet.datahaven-infra.network/buckets/0x3377a755f3823a660584819d24e9aaf2757b776af5d38854b88e681e1a1acf31/upload/0xc18281cb95b1a2c57331eea9a08c26e90440e44c5b52dc6f1e93498e74c9b8fa"
+    }
+  ]
+}
