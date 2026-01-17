@@ -1,58 +1,57 @@
 {
-  "timestamp": "2026-01-17T13:57:50.756Z",
-  "overall": "failed",
+  "timestamp": "2026-01-17T14:28:49.511Z",
+  "overall": "success",
   "summary": {
     "total": 9,
-    "passed": 5,
-    "failed": 1,
-    "skipped": 3
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2106
+      "duration": 3070
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 347
+      "duration": 624
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 411
+      "duration": 1594
     },
     {
       "name": "bucket-create",
       "status": "passed",
-      "duration": 22839
+      "duration": 22894
     },
     {
       "name": "storage-request",
       "status": "passed",
-      "duration": 34031
+      "duration": 33975
     },
     {
       "name": "file-upload",
-      "status": "failed",
-      "duration": 675615,
-      "error": "Timeout waiting for StorageRequestFulfilled"
+      "status": "passed",
+      "duration": 50786
     },
     {
       "name": "file-download",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 765
     },
     {
       "name": "file-delete",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 340560
     },
     {
       "name": "bucket-delete",
-      "status": "skipped",
-      "duration": 0
+      "status": "passed",
+      "duration": 35887
     }
   ]
 }
