@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-18T22:46:30.585Z",
+  "timestamp": "2026-01-18T22:57:47.633Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,22 +11,22 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2407
+      "duration": 2367
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 376
+      "duration": 394
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 899
+      "duration": 581
     },
     {
       "name": "bucket-create",
       "status": "failed",
-      "duration": 146882,
+      "duration": 146101,
       "error": "Timeout waiting for MSP backend (120000ms)"
     },
     {
