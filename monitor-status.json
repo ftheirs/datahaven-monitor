@@ -1,43 +1,43 @@
 {
-  "timestamp": "2026-01-18T20:37:57.308Z",
+  "timestamp": "2026-01-18T20:47:23.762Z",
   "overall": "failed",
   "summary": {
     "total": 9,
-    "passed": 5,
+    "passed": 3,
     "failed": 1,
-    "skipped": 3
+    "skipped": 5
   },
   "stages": [
     {
       "name": "connection",
       "status": "passed",
-      "duration": 3127
+      "duration": 2123
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 654
+      "duration": 584
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 1410
+      "duration": 653
     },
     {
       "name": "bucket-create",
-      "status": "passed",
-      "duration": 23716
+      "status": "failed",
+      "duration": 147243,
+      "error": "Timeout waiting for MSP backend (120000ms)"
     },
     {
       "name": "storage-request",
-      "status": "passed",
-      "duration": 33800
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-upload",
-      "status": "failed",
-      "duration": 676073,
-      "error": "Timeout waiting for finalized event"
+      "status": "skipped",
+      "duration": 0
     },
     {
       "name": "file-download",
