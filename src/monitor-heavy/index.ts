@@ -37,6 +37,7 @@ import {
   sleep,
   to0x,
 } from "../util/helpers";
+import { buildGasTxOpts } from "../util/evmTx";
 
 type HeavyPhaseStatus = "passed" | "failed" | "skipped";
 type HeavyPhaseResult = {
@@ -535,11 +536,12 @@ async function runMonitorHeavy(): Promise<void> {
       account.address,
       bucketName,
     )) as `0x${string}`;
-    const createBucketTx = await storageHubClient.createBucket(
+    const createBucketTx = await (storageHubClient as any).createBucket(
       mspId,
       bucketName,
       false,
       valuePropId,
+      await buildGasTxOpts(publicClient),
     );
     if (!createBucketTx) throw new Error("createBucket returned no tx hash");
     const createBucketRcpt = await publicClient.waitForTransactionReceipt({
@@ -629,7 +631,7 @@ async function runMonitorHeavy(): Promise<void> {
         );
 
         const srStart = Date.now();
-        const tx = await storageHubClient.issueStorageRequest(
+        const tx = await (storageHubClient as any).issueStorageRequest(
           bucketId,
           f.location,
           f.fingerprintHex,
@@ -638,6 +640,7 @@ async function runMonitorHeavy(): Promise<void> {
           peerId ? [peerId] : [],
           replicationTarget,
           customReplicationTarget,
+          await buildGasTxOpts(publicClient),
         );
         if (!tx) throw new Error("issueStorageRequest returned no tx hash");
         console.log(`[monitor-heavy] [SR ${idx}/${files.length}] tx sent: ${tx}`);
@@ -893,7 +896,10 @@ async function runMonitorHeavy(): Promise<void> {
               ...(fi.txHash ? { txHash: to0x(fi.txHash) } : {}),
             };
 
-            const tx = await storageHubClient.requestDeleteFile(core);
+            const tx = await (storageHubClient as any).requestDeleteFile(
+              core,
+              await buildGasTxOpts(publicClient),
+            );
             if (!tx) throw new Error("requestDeleteFile returned no tx hash");
             const rcpt = await publicClient.waitForTransactionReceipt({
               hash: tx,
@@ -1001,7 +1007,10 @@ async function runMonitorHeavy(): Promise<void> {
     // 8) Delete the bucket
     console.log("[monitor-heavy] Deleting bucket...");
     beginPhase("bucket-delete");
-    const delBucketTx = await storageHubClient.deleteBucket(bucketId);
+    const delBucketTx = await (storageHubClient as any).deleteBucket(
+      bucketId,
+      await buildGasTxOpts(publicClient),
+    );
     if (!delBucketTx) throw new Error("deleteBucket returned no tx hash");
     const delBucketRcpt = await publicClient.waitForTransactionReceipt({
       hash: delBucketTx,
