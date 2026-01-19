@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-19T06:56:00.481Z",
+  "timestamp": "2026-01-19T07:30:41.810Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,23 +11,23 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 2350
+      "duration": 2541
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 544
+      "duration": 622
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 893
+      "duration": 464
     },
     {
       "name": "bucket-create",
       "status": "failed",
-      "duration": 148691,
-      "error": "Timeout waiting for MSP backend (120000ms)"
+      "duration": 922,
+      "error": "The contract function \"createBucket\" reverted with the following reason:\ngas price less than block base fee\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373638383037383431313239, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0xc2338bD6ECd66254676fCdBfaDB0a1e5a4800EEa\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     },
     {
       "name": "storage-request",
