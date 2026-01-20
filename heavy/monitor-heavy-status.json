@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-01-20T16:18:56.304Z",
+  "timestamp": "2026-01-20T16:54:23.743Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 1378347,
+    "durationMs": 1222954,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,20 +19,38 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 16978
+      "durationMs": 22153
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 28387
+      "durationMs": 26119
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
+      "status": "passed",
+      "durationMs": 659114
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 184308
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 22689
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
       "status": "failed",
-      "durationMs": 1322824,
-      "error": "Timeout waiting for batch1 files to be ready (missing 5/10)"
+      "durationMs": 288335,
+      "error": "WebSocket is not connected\nFailed WS Request: {\"method\":\"state_queryStorageAt\",\"params\":[[\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a6724495b089d049e93eeb98e3c6fdf49d3acaf1b54f761c772ddc39a7fd77a7438fe8f6f0c1cb9eecf81780f7f7a6ec4fa\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a6748b50e4fb67733d3ebf78a03a29283a4cca554251bf1d1b6bc753cca481f273c03d9abaf5c22933e24636e0dc3519076\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a679f8b6b5ec73ad062472b01f8a4d0027478a5c5a6831b6ff1cc5280432d27602a3fd0677cf261358440191b5b0743a550\"]]}"
     }
   ]
 }
