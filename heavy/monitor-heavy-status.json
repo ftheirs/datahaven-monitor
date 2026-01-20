@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-01-20T17:29:41.443Z",
+  "timestamp": "2026-01-20T18:07:01.358Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
-  "overall": "success",
+  "overall": "failed",
   "summary": {
-    "durationMs": 1527330,
+    "durationMs": 1917682,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,49 +19,38 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 18566
+      "durationMs": 18874
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 22781
+      "durationMs": 26504
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 448843
+      "durationMs": 384805
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
       "status": "passed",
-      "durationMs": 154133
+      "durationMs": 129537
     },
     {
       "name": "storage-request-batch2",
       "label": "Storage Req (Batch 2)",
       "status": "passed",
-      "durationMs": 22780
+      "durationMs": 22154
     },
     {
       "name": "upload-batch2",
       "label": "Upload (Batch 2)",
-      "status": "passed",
-      "durationMs": 592488
-    },
-    {
-      "name": "file-delete-all10",
-      "label": "Delete All",
-      "status": "passed",
-      "durationMs": 227489
-    },
-    {
-      "name": "bucket-delete",
-      "label": "Bucket Delete",
-      "status": "passed",
-      "durationMs": 20022
+      "status": "failed",
+      "durationMs": 1315611,
+      "error": "Timeout waiting for batch2 files to be ready (missing 2/5)"
     }
   ]
 }
