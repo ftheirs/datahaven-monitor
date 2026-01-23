@@ -9,9 +9,14 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   monitor_heavy_stagenet:
     uses: ./.github/workflows/_monitor-heavy.yml
+    permissions:
+      contents: write
     with:
       network: stagenet
       publish_subdir: heavy/stagenet

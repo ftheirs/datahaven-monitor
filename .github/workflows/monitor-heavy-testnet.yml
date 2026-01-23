@@ -9,9 +9,14 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   monitor_heavy_testnet:
     uses: ./.github/workflows/_monitor-heavy.yml
+    permissions:
+      contents: write
     with:
       network: testnet
       publish_subdir: heavy/testnet
