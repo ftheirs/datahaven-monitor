@@ -10,6 +10,11 @@
 - [![Sanity – File Delete](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/file-delete.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
 - [![Sanity – Bucket Delete](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/bucket-delete.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-cron.yml)
 
+### Monitor Heavy (network-scoped)
+
+- [![Heavy – Testnet](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/heavy/testnet/status.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-heavy-testnet.yml)
+- [![Heavy – Stagenet](https://img.shields.io/endpoint?url=https://ftheirs.github.io/datahaven-monitor/heavy/stagenet/status.json)](https://github.com/ftheirs/datahaven-monitor/actions/workflows/monitor-heavy-stagenet.yml)
+
 Testnet Sentinel runs comprehensive end-to-end monitoring of StorageHub functionality,
 testing the full lifecycle: connection, authentication, bucket management, file storage,
 and cleanup. Each stage is monitored and badged independently.
@@ -56,6 +61,10 @@ Badges are generated as [Shields.io endpoint JSON](https://shields.io/endpoint) 
 - Summary badge: `badges/status.json`
 
 Badges update every 15 minutes via GitHub Actions.
+
+Monitor-heavy publishes its endpoints under network-scoped paths:
+- `heavy/testnet/status.json` and `heavy/testnet/monitor-heavy-status.json`
+- `heavy/stagenet/status.json` and `heavy/stagenet/monitor-heavy-status.json`
 
 ### Slack Notifications
 

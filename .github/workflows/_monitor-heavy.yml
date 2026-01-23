@@ -1,16 +1,41 @@
-name: Monitor Heavy – Testnet Sentinel
+name: _Monitor Heavy (reusable)
 
 on:
-  # Deprecated: replaced by `monitor-heavy-testnet.yml` and `monitor-heavy-stagenet.yml`
-  # which call the reusable workflow and publish to network-scoped gh-pages dirs.
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      network:
+        description: "StorageHub network name (e.g. stagenet|testnet)"
+        type: string
+        required: true
+      publish_subdir:
+        description: "Destination directory inside gh-pages (e.g. heavy/testnet)"
+        type: string
+        required: true
+      output_dir:
+        description: "Local output directory for monitor-heavy (e.g. badges-heavy/testnet)"
+        type: string
+        required: true
+      slack_enabled:
+        description: "Whether to send Slack notifications on status toggle"
+        type: boolean
+        required: false
+        default: true
+    secrets:
+      ACCOUNT_PRIVATE_KEY:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: false
 
 permissions:
   contents: write
 
+concurrency:
+  group: monitor-heavy-${{ inputs.network }}
+  cancel-in-progress: true
+
 jobs:
   monitor_heavy:
-    name: Run Monitor Heavy
+    name: Run Monitor Heavy (${{ inputs.network }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -29,8 +54,8 @@ jobs:
       - name: Run monitor-heavy
         env:
           ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
-          DATAHAVEN_NETWORK: testnet
-          MONITOR_OUTPUT_DIR: badges-heavy
+          DATAHAVEN_NETWORK: ${{ inputs.network }}
+          MONITOR_OUTPUT_DIR: ${{ inputs.output_dir }}
         run: bun run monitor-heavy
 
       - name: Download previous monitor-heavy status from gh-pages branch
@@ -42,49 +67,49 @@ jobs:
           path: gh-pages
           fetch-depth: 1
 
-      - name: Publish monitor-heavy endpoints to gh-pages (heavy/)
+      - name: Publish monitor-heavy endpoints to gh-pages
         if: always()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: badges-heavy
-          destination_dir: heavy
+          publish_dir: ${{ inputs.output_dir }}
+          destination_dir: ${{ inputs.publish_subdir }}
           keep_files: true
 
       - name: Parse monitor-heavy status and detect changes
         if: always()
         id: parse_status
+        env:
+          OUTPUT_DIR: ${{ inputs.output_dir }}
+          PUBLISH_SUBDIR: ${{ inputs.publish_subdir }}
         run: |
-          if [ ! -f badges-heavy/monitor-heavy-status.json ]; then
-            echo "monitor-heavy-status.json not found"
+          CURRENT_PATH="${OUTPUT_DIR}/monitor-heavy-status.json"
+          if [ ! -f "$CURRENT_PATH" ]; then
+            echo "monitor-heavy-status.json not found at $CURRENT_PATH"
             exit 0
           fi
 
-          echo "=== Current Monitor Heavy Status ==="
-          cat badges-heavy/monitor-heavy-status.json
-          echo "==================================="
+          echo "=== Current Monitor Heavy Status (${OUTPUT_DIR}) ==="
+          cat "$CURRENT_PATH"
+          echo "==================================================="
 
-          CURRENT_OVERALL=$(jq -r '.overall' badges-heavy/monitor-heavy-status.json)
-          CURRENT_NETWORK=$(jq -r '.network' badges-heavy/monitor-heavy-status.json)
-          CURRENT_DURATION_MS=$(jq -r '.summary.durationMs' badges-heavy/monitor-heavy-status.json)
+          CURRENT_OVERALL=$(jq -r '.overall' "$CURRENT_PATH")
+          CURRENT_NETWORK=$(jq -r '.network' "$CURRENT_PATH")
+          CURRENT_DURATION_MS=$(jq -r '.summary.durationMs' "$CURRENT_PATH")
           CURRENT_DURATION_S=$((CURRENT_DURATION_MS / 1000))
 
-          FAILED_PHASES=$(jq -r '.phases[] | select(.status == "failed") | .label' badges-heavy/monitor-heavy-status.json | tr '\n' ',' | sed 's/,$//')
-          PASSED=$(jq -r '[.phases[] | select(.status == "passed")] | length' badges-heavy/monitor-heavy-status.json)
-          FAILED=$(jq -r '[.phases[] | select(.status == "failed")] | length' badges-heavy/monitor-heavy-status.json)
-          TOTAL=$(jq -r '.phases | length' badges-heavy/monitor-heavy-status.json)
+          FAILED_PHASES=$(jq -r '.phases[] | select(.status == "failed") | .label' "$CURRENT_PATH" | tr '\n' ',' | sed 's/,$//')
+          PASSED=$(jq -r '[.phases[] | select(.status == "passed")] | length' "$CURRENT_PATH")
+          FAILED=$(jq -r '[.phases[] | select(.status == "failed")] | length' "$CURRENT_PATH")
+          TOTAL=$(jq -r '.phases | length' "$CURRENT_PATH")
 
           PREVIOUS_OVERALL="unknown"
           PREVIOUS_VALID="false"
-          # Toggle-only notifications: default to NO notification unless we can
-          # prove the overall status changed vs a valid previous status.
           STATUS_CHANGED="false"
           CHANGE_TYPE="unchanged"
 
-          # Prefer reading the previous status from the gh-pages branch directly.
-          PREVIOUS_PATH="gh-pages/heavy/monitor-heavy-status.json"
+          PREVIOUS_PATH="gh-pages/${PUBLISH_SUBDIR}/monitor-heavy-status.json"
           if [ -f "$PREVIOUS_PATH" ] && [ -s "$PREVIOUS_PATH" ]; then
-            # -e: fail on null/false, so we can reliably detect invalid/non-JSON content.
             PREVIOUS_OVERALL=$(jq -er '.overall' "$PREVIOUS_PATH" 2>/dev/null || echo "")
             if [ "$PREVIOUS_OVERALL" = "success" ] || [ "$PREVIOUS_OVERALL" = "failed" ]; then
               PREVIOUS_VALID="true"
@@ -107,8 +132,6 @@ jobs:
               echo "ℹ️ Status changed: $PREVIOUS_OVERALL → $CURRENT_OVERALL ($CHANGE_TYPE)"
             fi
           else
-            # If a previous file exists but isn't valid JSON, treat it as "unknown" and
-            # *do not* alert to avoid spamming on every run due to parse failures.
             if [ -f "$PREVIOUS_PATH" ] && [ -s "$PREVIOUS_PATH" ]; then
               STATUS_CHANGED="false"
               CHANGE_TYPE="invalid_previous"
@@ -131,7 +154,7 @@ jobs:
           echo "change_type=$CHANGE_TYPE" >> $GITHUB_OUTPUT
 
       - name: Send Slack notification (monitor-heavy)
-        if: always() && steps.parse_status.outputs.status_changed == 'true'
+        if: always() && inputs.slack_enabled && steps.parse_status.outputs.status_changed == 'true'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           OVERALL: ${{ steps.parse_status.outputs.overall }}
@@ -143,6 +166,7 @@ jobs:
           PASSED: ${{ steps.parse_status.outputs.passed }}
           FAILED: ${{ steps.parse_status.outputs.failed }}
           TOTAL: ${{ steps.parse_status.outputs.total }}
+          OUTPUT_DIR: ${{ inputs.output_dir }}
         run: |
           if [ -z "$SLACK_WEBHOOK_URL" ]; then
             echo "SLACK_WEBHOOK_URL not configured, skipping notification"
@@ -161,16 +185,6 @@ jobs:
             EMOJI="🔴"
             COLOR="danger"
             TITLE="Degraded"
-          elif [ "$CHANGE_TYPE" = "initial" ]; then
-            if [ "$OVERALL" = "success" ]; then
-              EMOJI="✅"
-              COLOR="good"
-              TITLE="Started (OK)"
-            else
-              EMOJI="❌"
-              COLOR="danger"
-              TITLE="Started (Failing)"
-            fi
           else
             if [ "$OVERALL" = "success" ]; then
               EMOJI="✅"
@@ -188,12 +202,10 @@ jobs:
             SUMMARY="$SUMMARY | Failed: $FAILED_PHASES"
           fi
 
-          # Build phase grid (3 columns) for the simplified heavy flow.
-          # Names match src/monitor-heavy/index.ts phaseLabel().
+          CURRENT_PATH="${OUTPUT_DIR}/monitor-heavy-status.json"
           GRID=""
           for phase_name in bucket-create storage-request-batch1 upload-batch1 file-delete-first5 storage-request-batch2 upload-batch2 file-delete-all10 bucket-delete; do
-            phase_status=$(jq -r ".phases[] | select(.name == \"$phase_name\") | .status" badges-heavy/monitor-heavy-status.json 2>/dev/null)
-
+            phase_status=$(jq -r ".phases[] | select(.name == \"$phase_name\") | .status" "$CURRENT_PATH" 2>/dev/null)
             if [ "$phase_status" = "passed" ]; then
               icon="✓"
             elif [ "$phase_status" = "failed" ]; then
@@ -201,7 +213,6 @@ jobs:
             else
               icon="○"
             fi
-
             case "$phase_name" in
               "bucket-create") display="Bucket Create     " ;;
               "storage-request-batch1") display="Storage Req (B1)  " ;;
@@ -212,10 +223,7 @@ jobs:
               "file-delete-all10") display="Delete All       " ;;
               "bucket-delete") display="Bucket Delete     " ;;
             esac
-
             GRID="${GRID}${icon} ${display}    "
-
-            # New line after every 3 entries for readability
             case "$phase_name" in
               "upload-batch1"|"upload-batch2"|"bucket-delete") GRID="${GRID}\n" ;;
             esac
@@ -224,26 +232,14 @@ jobs:
           curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"$EMOJI Testnet Sentinel - Monitor Heavy $TITLE\",
+              \"text\": \"$EMOJI Testnet Sentinel - Monitor Heavy ($NETWORK) $TITLE\",
               \"attachments\": [
                 {
                   \"color\": \"$COLOR\",
                   \"fields\": [
-                    {
-                      \"title\": \"Summary\",
-                      \"value\": \"$SUMMARY\",
-                      \"short\": false
-                    },
-                    {
-                      \"title\": \"Stage Results\",
-                      \"value\": \"$GRID\",
-                      \"short\": false
-                    },
-                    {
-                      \"title\": \"Info\",
-                      \"value\": \"Network: $NETWORK | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\",
-                      \"short\": false
-                    }
+                    { \"title\": \"Summary\", \"value\": \"$SUMMARY\", \"short\": false },
+                    { \"title\": \"Stage Results\", \"value\": \"$GRID\", \"short\": false },
+                    { \"title\": \"Info\", \"value\": \"Network: $NETWORK | <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub>\", \"short\": false }
                   ],
                   \"footer\": \"Testnet Sentinel\",
                   \"ts\": $(date +%s)
@@ -253,12 +249,14 @@ jobs:
 
       - name: Fail job if monitor-heavy reported failure
         if: always()
+        env:
+          OUTPUT_DIR: ${{ inputs.output_dir }}
         run: |
-          if [ -f badges-heavy/monitor-heavy-status.json ]; then
-            if jq -e '.overall == "failed"' badges-heavy/monitor-heavy-status.json >/dev/null; then
+          CURRENT_PATH="${OUTPUT_DIR}/monitor-heavy-status.json"
+          if [ -f "$CURRENT_PATH" ]; then
+            if jq -e '.overall == "failed"' "$CURRENT_PATH" >/dev/null; then
               echo "monitor-heavy reported failure"
               exit 1
             fi
           fi
-
 

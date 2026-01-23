@@ -1,0 +1,23 @@
+name: Monitor Heavy – Stagenet
+
+on:
+  schedule:
+    # Run every 20 minutes, offset to avoid overlapping testnet
+    - cron: "5/20 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  monitor_heavy_stagenet:
+    uses: ./.github/workflows/_monitor-heavy.yml
+    with:
+      network: stagenet
+      publish_subdir: heavy/stagenet
+      output_dir: badges-heavy/stagenet
+      slack_enabled: true
+    secrets:
+      ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+

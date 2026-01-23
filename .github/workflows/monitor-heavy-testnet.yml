@@ -1,0 +1,23 @@
+name: Monitor Heavy – Testnet
+
+on:
+  schedule:
+    # Run every 20 minutes
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  monitor_heavy_testnet:
+    uses: ./.github/workflows/_monitor-heavy.yml
+    with:
+      network: testnet
+      publish_subdir: heavy/testnet
+      output_dir: badges-heavy/testnet
+      slack_enabled: true
+    secrets:
+      ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
