@@ -137,8 +137,10 @@ jobs:
               CHANGE_TYPE="invalid_previous"
               echo "⚠️ Previous status exists but is invalid/unparsable; skipping Slack notification"
             else
-              CHANGE_TYPE="no_previous"
-              echo "ℹ️ No valid previous status found; skipping Slack notification"
+              # First successful publish case: notify once so we know the monitor is alive.
+              STATUS_CHANGED="true"
+              CHANGE_TYPE="initial"
+              echo "ℹ️ No previous status found; sending initial Slack notification"
             fi
           fi
 
@@ -185,6 +187,16 @@ jobs:
             EMOJI="🔴"
             COLOR="danger"
             TITLE="Degraded"
+          elif [ "$CHANGE_TYPE" = "initial" ]; then
+            if [ "$OVERALL" = "success" ]; then
+              EMOJI="✅"
+              COLOR="good"
+              TITLE="Started (OK)"
+            else
+              EMOJI="❌"
+              COLOR="danger"
+              TITLE="Started (Failing)"
+            fi
           else
             if [ "$OVERALL" = "success" ]; then
               EMOJI="✅"
