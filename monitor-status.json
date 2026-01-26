@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-26T18:58:08.724Z",
+  "timestamp": "2026-01-26T19:21:11.705Z",
   "overall": "failed",
   "summary": {
     "total": 9,
@@ -11,23 +11,23 @@
     {
       "name": "connection",
       "status": "passed",
-      "duration": 3011
+      "duration": 1995
     },
     {
       "name": "health",
       "status": "passed",
-      "duration": 605
+      "duration": 340
     },
     {
       "name": "auth",
       "status": "passed",
-      "duration": 623
+      "duration": 866
     },
     {
       "name": "bucket-create",
       "status": "failed",
-      "duration": 1301,
-      "error": "The contract function \"createBucket\" reverted with the following reason:\ngas price less than block base fee\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373639343533383837373339, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0xc2338bD6ECd66254676fCdBfaDB0a1e5a4800EEa\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
+      "duration": 967,
+      "error": "The contract function \"createBucket\" reverted with the following reason:\ngas price less than block base fee\n\nContract Call:\n  address:   0x0000000000000000000000000000000000000404\n  function:  createBucket(bytes32 mspId, bytes name, bool _private, bytes32 valuePropId)\n  args:                  (0x0000000000000000000000000000000000000000000000000000000000000001, 0x6d6f6e69746f722d746573742d31373639343535323730393338, false, 0x628a23c7aa64902e13f63ffdd0725e07723745f84cabda048d901020d200da1e)\n  sender:    0xc2338bD6ECd66254676fCdBfaDB0a1e5a4800EEa\n\nDocs: https://viem.sh/docs/contract/writeContract\nVersion: viem@2.41.2"
     },
     {
       "name": "storage-request",
