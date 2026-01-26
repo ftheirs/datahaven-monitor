@@ -1,9 +1,9 @@
 name: Monitor – Testnet Sentinel
 
 on:
-  # schedule:
+  schedule:
     # Run every 15 minutes
-    # - cron: "*/15 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
   push:
     branches:
