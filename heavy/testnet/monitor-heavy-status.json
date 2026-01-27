@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-01-27T18:33:56.770Z",
+  "timestamp": "2026-01-27T18:56:25.444Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 2188339,
+    "durationMs": 194670,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,38 +19,20 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 15482
+      "durationMs": 17465
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 24307
+      "durationMs": 21990
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
-      "status": "passed",
-      "durationMs": 510039
-    },
-    {
-      "name": "file-delete-first5",
-      "label": "Delete Half",
-      "status": "passed",
-      "durationMs": 285883
-    },
-    {
-      "name": "storage-request-batch2",
-      "label": "Storage Req (Batch 2)",
-      "status": "passed",
-      "durationMs": 21538
-    },
-    {
-      "name": "upload-batch2",
-      "label": "Upload (Batch 2)",
       "status": "failed",
-      "durationMs": 1310910,
-      "error": "Timeout waiting for batch2 files to be ready (missing 1/5)"
+      "durationMs": 145034,
+      "error": "No response received from RPC endpoint in 60s"
     }
   ]
 }
