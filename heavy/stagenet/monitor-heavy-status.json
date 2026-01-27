@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-01-27T07:51:40.169Z",
+  "timestamp": "2026-01-27T09:04:16.485Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Stagenet",
   "overall": "failed",
   "summary": {
-    "durationMs": 973535,
+    "durationMs": 1274298,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,25 +19,25 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 18308
+      "durationMs": 18680
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 22772
+      "durationMs": 22306
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 203489
+      "durationMs": 508267
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
       "status": "failed",
-      "durationMs": 718798,
+      "durationMs": 714907,
       "error": "Timeout waiting for MSP backend (660000ms)"
     }
   ]
