@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-01-27T21:01:19.478Z",
+  "timestamp": "2026-01-27T21:49:10.479Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
-  "overall": "failed",
+  "overall": "success",
   "summary": {
-    "durationMs": 346156,
+    "durationMs": 1432781,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,20 +19,49 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 18319
+      "durationMs": 23500
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 22540
+      "durationMs": 26121
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
-      "status": "failed",
-      "durationMs": 295141,
-      "error": "disconnected from wss://services.datahaven-testnet.network/testnet: 1006:: Connection ended"
+      "status": "passed",
+      "durationMs": 568918
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 156239
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 21975
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
+      "status": "passed",
+      "durationMs": 476410
+    },
+    {
+      "name": "file-delete-all10",
+      "label": "Delete All",
+      "status": "passed",
+      "durationMs": 121773
+    },
+    {
+      "name": "bucket-delete",
+      "label": "Bucket Delete",
+      "status": "passed",
+      "durationMs": 17614
     }
   ]
 }
