@@ -2,8 +2,8 @@ name: Monitor Heavy – Stagenet
 
 on:
   schedule:
-    # Run every 30 minutes, offset to avoid overlapping testnet
-    - cron: "5/30 * * * *"
+    # Run every 40 minutes, offset to avoid overlapping testnet
+    - cron: "5/40 * * * *"
   workflow_dispatch:
   push:
     branches:
