@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-02-03T13:42:49.088Z",
+  "timestamp": "2026-02-03T14:46:21.758Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 2000124,
+    "durationMs": 1128463,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,38 +19,26 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 29915
+      "durationMs": 19238
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 26178
+      "durationMs": 27113
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 415226
+      "durationMs": 322427
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
-      "status": "passed",
-      "durationMs": 171630
-    },
-    {
-      "name": "storage-request-batch2",
-      "label": "Storage Req (Batch 2)",
-      "status": "passed",
-      "durationMs": 21970
-    },
-    {
-      "name": "upload-batch2",
-      "label": "Upload (Batch 2)",
       "status": "failed",
-      "durationMs": 1314999,
-      "error": "Timeout waiting for batch2 files to be ready (missing 2/5)"
+      "durationMs": 749536,
+      "error": "Timeout waiting for MSP backend (660000ms)"
     }
   ]
 }
