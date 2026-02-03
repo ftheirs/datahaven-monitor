@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-02-03T20:05:28.137Z",
+  "timestamp": "2026-02-03T21:48:26.709Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 161349,
+    "durationMs": 2557120,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,20 +19,44 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 17409
+      "durationMs": 18870
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 22084
+      "durationMs": 23540
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
+      "status": "passed",
+      "durationMs": 570563
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 530134
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 23265
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
+      "status": "passed",
+      "durationMs": 620671
+    },
+    {
+      "name": "file-delete-all10",
+      "label": "Delete All",
       "status": "failed",
-      "durationMs": 111696,
-      "error": "WebSocket is not connected\nFailed WS Request: {\"method\":\"state_queryStorageAt\",\"params\":[[\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a67d3fa89f590037713316e8c3942f51f82d7ecdc0188da881109959433ca069e4d7b8c9bcddd73c04c362b748740b8577f\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a6738153e4702a22c8f237f0431b58807b9f993e27c7dd9311e15001c3e743460a3676439e68e650d54734c465331eb4ec6\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a67f06c1cf66cc35235df1cbb9a9e02307a50fb42d8cc5fce2fbbeb70a2fb75784fa97d9744815dc8eb71a534683f550b41\"]]}"
+      "durationMs": 749884,
+      "error": "Timeout waiting for MSP backend (660000ms)"
     }
   ]
 }
