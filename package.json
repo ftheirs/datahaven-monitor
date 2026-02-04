@@ -22,8 +22,8 @@
 		"@polkadot/types": "16.5.4",
 		"@polkadot/util": "14.0.1",
 		"@polkadot/util-crypto": "14.0.1",
-		"@storagehub-sdk/core": "0.3.3",
-		"@storagehub-sdk/msp-client": "0.3.3",
+		"@storagehub-sdk/core": "0.4.4",
+		"@storagehub-sdk/msp-client": "0.4.4",
 		"@storagehub/api-augment": "^0.2.11",
 		"@storagehub/types-bundle": "latest",
 		"viem": "2.41.2"
