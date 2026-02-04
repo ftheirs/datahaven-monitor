@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-02-04T16:44:32.895Z",
+  "timestamp": "2026-02-04T17:35:25.752Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Stagenet",
-  "overall": "success",
+  "overall": "failed",
   "summary": {
-    "durationMs": 972190,
+    "durationMs": 226953,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,49 +19,14 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 18991
+      "durationMs": 23850
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
-      "status": "passed",
-      "durationMs": 24113
-    },
-    {
-      "name": "upload-batch1",
-      "label": "Upload (Batch 1)",
-      "status": "passed",
-      "durationMs": 419795
-    },
-    {
-      "name": "file-delete-first5",
-      "label": "Delete Half",
-      "status": "passed",
-      "durationMs": 104792
-    },
-    {
-      "name": "storage-request-batch2",
-      "label": "Storage Req (Batch 2)",
-      "status": "passed",
-      "durationMs": 21562
-    },
-    {
-      "name": "upload-batch2",
-      "label": "Upload (Batch 2)",
-      "status": "passed",
-      "durationMs": 233003
-    },
-    {
-      "name": "file-delete-all10",
-      "label": "Delete All",
-      "status": "passed",
-      "durationMs": 109723
-    },
-    {
-      "name": "bucket-delete",
-      "label": "Bucket Delete",
-      "status": "passed",
-      "durationMs": 20000
+      "status": "failed",
+      "durationMs": 202968,
+      "error": "Timed out while waiting for transaction with hash \"0x8f6f9d16774d9f53098e194422e9f3d789fa84fddbf85ef2ac2f5b044ac6a818\" to be confirmed.\n\nVersion: viem@2.41.2"
     }
   ]
 }
