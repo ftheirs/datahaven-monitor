@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-02-06T13:53:50.294Z",
+  "timestamp": "2026-02-06T14:31:26.205Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 585866,
+    "durationMs": 1991348,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,20 +19,44 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 17785
+      "durationMs": 18210
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 26568
+      "durationMs": 22682
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
+      "status": "passed",
+      "durationMs": 477814
+    },
+    {
+      "name": "file-delete-first5",
+      "label": "Delete Half",
+      "status": "passed",
+      "durationMs": 150813
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 21418
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
+      "status": "passed",
+      "durationMs": 534934
+    },
+    {
+      "name": "file-delete-all10",
+      "label": "Delete All",
       "status": "failed",
-      "durationMs": 531335,
-      "error": "upload failed after retry window elapsed"
+      "durationMs": 745268,
+      "error": "Timeout waiting for MSP backend (660000ms)"
     }
   ]
 }
