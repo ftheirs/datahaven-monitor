@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-02-10T11:25:14.126Z",
+  "timestamp": "2026-02-10T12:59:46.490Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 1381398,
+    "durationMs": 1376548,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,19 +19,19 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 19399
+      "durationMs": 18888
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 29158
+      "durationMs": 28080
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "failed",
-      "durationMs": 1322675,
+      "durationMs": 1319408,
       "error": "Timeout waiting for batch1 files to be ready (missing 10/10)"
     }
   ]
