@@ -261,6 +261,11 @@ const HEAVY_CONFIG = {
   readyPollIntervalMs: 30_000,
   readyPollTotalMs: 11 * 60_000,
   bucketReadyPoll: { retries: 220, delayMs: 3_000 }, // 11 min (used elsewhere)
+  // Backend disappearance polling after deletes:
+  // - Poll infrequently (every 30s) to keep logs readable.
+  // - Give it a longer budget than readiness, as backend deletion propagation can be slower.
+  deleteAbsentPollIntervalMs: 30_000,
+  deleteAbsentPollTotalMs: 25 * 60_000, // 25 min
 } as const;
 
 type FileSpec = {
@@ -352,10 +357,9 @@ async function waitUntilFilesReadyViaTree(
   };
 
   let attempt = 0;
-  while (true) {
+  while (Date.now() < deadline) {
     attempt += 1;
     const remainingMs = deadline - Date.now();
-    if (remainingMs <= 0) break;
 
     try {
       const resp = await mspClient.buckets.getFiles(bucketId);
@@ -382,7 +386,7 @@ async function waitUntilFilesReadyViaTree(
         `[monitor-heavy] ${label} readiness snapshot (ready ${readyCount}/${fileKeys.length}, remaining=${Math.max(
           0,
           Math.round(remainingMs / 1000),
-        )}s):`,
+        )}s, attempt=${attempt}):`,
       );
       fileKeys.forEach((fk, idx) => {
         const st = formatStatus(lastStatus.get(fk.toLowerCase()) ?? "unknown");
@@ -429,11 +433,77 @@ async function waitUntilFilesAbsentViaTree(
   console.log(
     `[monitor-heavy] Waiting for ${label} files to disappear from bucket listing...`,
   );
-  await pollBackend(async () => {
-    const resp = await mspClient.buckets.getFiles(bucketId);
-    const map = flattenFileTree(resp.files);
-    return fileKeys.every((fk) => !map.has(fk.toLowerCase()));
-  }, HEAVY_CONFIG.bucketReadyPoll);
+
+  const deadline = Date.now() + HEAVY_CONFIG.deleteAbsentPollTotalMs;
+  const delayMs = HEAVY_CONFIG.deleteAbsentPollIntervalMs;
+  const lastPresent = new Map<string, boolean>(); // lower(fileKey) -> isPresent
+  const lastStatus = new Map<string, string>(); // lower(fileKey) -> status (if present)
+
+  let attempt = 0;
+  while (Date.now() < deadline) {
+    attempt += 1;
+    const remainingMs = deadline - Date.now();
+
+    try {
+      const resp = await mspClient.buckets.getFiles(bucketId);
+      const map = flattenFileTree(resp.files);
+
+      let absentCount = 0;
+      for (const fk of fileKeys) {
+        const key = fk.toLowerCase();
+        const node = map.get(key);
+        const isPresent = !!node;
+        if (!isPresent) absentCount++;
+
+        const prevPresent = lastPresent.get(key);
+        if (prevPresent !== false && isPresent === false) {
+          console.log(
+            `[monitor-heavy] ${label} file disappeared from bucket listing: ${fk}`,
+          );
+        }
+
+        lastPresent.set(key, isPresent);
+        if (node) lastStatus.set(key, node.status);
+      }
+
+      console.log("=".repeat(80));
+      console.log(
+        `[monitor-heavy] ${label} absence snapshot (absent ${absentCount}/${fileKeys.length}, remaining=${Math.max(
+          0,
+          Math.round(remainingMs / 1000),
+        )}s, attempt=${attempt}):`,
+      );
+      fileKeys.forEach((fk, idx) => {
+        const key = fk.toLowerCase();
+        const isPresent = lastPresent.get(key);
+        const status = lastStatus.get(key);
+        const st = isPresent ? `Present${status ? ` (${status})` : ""}` : "Absent";
+        console.log(`  ${idx + 1}) Filekey: ${fk} Status: ${st}`);
+      });
+      console.log("=".repeat(80));
+
+      if (absentCount === fileKeys.length) return;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(
+        `[monitor-heavy] ${label} absence poll error (attempt ${attempt}): ${msg.slice(0, 180)}`,
+      );
+    }
+
+    await sleep(delayMs);
+  }
+
+  const stillPresent = fileKeys.filter((fk) => lastPresent.get(fk.toLowerCase()));
+  console.log(
+    `[monitor-heavy] Timeout waiting for ${label} files to disappear. Still present (${stillPresent.length}/${fileKeys.length}):`,
+  );
+  stillPresent.forEach((fk) => {
+    const st = lastStatus.get(fk.toLowerCase());
+    console.log(`  - ${fk}${st ? ` (lastStatus=${st})` : ""}`);
+  });
+  throw new Error(
+    `Timeout waiting for ${label} files to disappear from bucket listing (present ${stillPresent.length}/${fileKeys.length})`,
+  );
 }
 
 async function runMonitorHeavy(): Promise<void> {
@@ -875,16 +945,25 @@ async function runMonitorHeavy(): Promise<void> {
         attempt++
       ) {
         const failed: FileSpec[] = [];
+        const failureReasons = new Map<string, number>();
+        let successCount = 0;
         console.log(
           `[monitor-heavy] Delete attempt ${attempt}/${HEAVY_CONFIG.deleteRetryDelaysMs.length} (${remaining.length} files)...`,
         );
 
-        for (const f of remaining) {
+        for (let i = 0; i < remaining.length; i++) {
+          const f = remaining[i]!;
+          const fk = f.fileKeyHex!;
+          const idxLabel = `${i + 1}/${remaining.length}`;
+          const started = Date.now();
           try {
+            console.log(
+              `[monitor-heavy] Delete attempt ${attempt} start ${idxLabel}: fileKey=${fk} name=${f.name}`,
+            );
             // Prefer MSP fileInfo to populate required fields
             const fi = await mspClient.files.getFileInfo(
               bucketId,
-              f.fileKeyHex!,
+              fk,
             );
             const core: CoreFileInfo = {
               fileKey: to0x(fi.fileKey),
@@ -896,31 +975,58 @@ async function runMonitorHeavy(): Promise<void> {
               ...(fi.txHash ? { txHash: to0x(fi.txHash) } : {}),
             };
 
+            const txStart = Date.now();
             const tx = await (storageHubClient as any).requestDeleteFile(
               core,
               await buildGasTxOpts(publicClient),
             );
             if (!tx) throw new Error("requestDeleteFile returned no tx hash");
+            console.log(
+              `[monitor-heavy] Delete attempt ${attempt} tx sent ${idxLabel}: ${tx}`,
+            );
             const rcpt = await publicClient.waitForTransactionReceipt({
               hash: tx,
             });
             if (rcpt.status !== "success")
               throw new Error("requestDeleteFile failed");
+            console.log(
+              `[monitor-heavy] Delete attempt ${attempt} confirmed ${idxLabel}: fileKey=${fk} (txWait=${Date.now() - txStart}ms total=${Date.now() - started}ms)`,
+            );
+            successCount += 1;
             await sleep(500);
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
             // If storage request is still active, retry later
             if (msg.includes("FileHasActiveStorageRequest")) {
+              failureReasons.set(
+                "FileHasActiveStorageRequest",
+                (failureReasons.get("FileHasActiveStorageRequest") ?? 0) + 1,
+              );
               failed.push(f);
             } else {
               // keep it as failed; we’ll retry, but log
-              console.log(`[monitor-heavy] delete failed (${f.name}): ${msg}`);
+              const reason = msg.slice(0, 120);
+              failureReasons.set(reason, (failureReasons.get(reason) ?? 0) + 1);
+              console.log(
+                `[monitor-heavy] Delete attempt ${attempt} failed ${idxLabel}: fileKey=${fk} name=${f.name} err=${reason}`,
+              );
               failed.push(f);
             }
           }
         }
 
         remaining = failed;
+        console.log(
+          `[monitor-heavy] Delete attempt ${attempt} summary: success=${successCount} failed=${failed.length}`,
+        );
+        if (failureReasons.size > 0) {
+          console.log("[monitor-heavy] Delete attempt failure reasons:");
+          Array.from(failureReasons.entries())
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([reason, count]) => {
+              console.log(`  - ${reason}: ${count}`);
+            });
+        }
         if (remaining.length === 0) break;
 
         const delay = HEAVY_CONFIG.deleteRetryDelaysMs[attempt - 1]!;

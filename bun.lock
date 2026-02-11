@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "datahaven-monitor",
@@ -8,8 +9,8 @@
         "@polkadot/types": "16.5.4",
         "@polkadot/util": "14.0.1",
         "@polkadot/util-crypto": "14.0.1",
-        "@storagehub-sdk/core": "0.3.3",
-        "@storagehub-sdk/msp-client": "0.3.3",
+        "@storagehub-sdk/core": "0.4.4",
+        "@storagehub-sdk/msp-client": "0.4.4",
         "@storagehub/api-augment": "^0.2.11",
         "@storagehub/types-bundle": "latest",
         "viem": "2.41.2",
@@ -202,9 +203,9 @@
 
     "@scure/sr25519": ["@scure/sr25519@0.2.0", "", { "dependencies": { "@noble/curves": "~1.9.2", "@noble/hashes": "~1.8.0" } }, "sha512-uUuLP7Z126XdSizKtrCGqYyR3b3hYtJ6Fg/XFUXmc2//k2aXHDLqZwFeXxL97gg4XydPROPVnuaHGF2+xriSKg=="],
 
-    "@storagehub-sdk/core": ["@storagehub-sdk/core@0.3.3", "", { "dependencies": { "@polkadot/types": "^16.4.7", "abitype": "^1.0.0", "ethers": "^6.15.0" }, "peerDependencies": { "viem": ">=2.38.3" } }, "sha512-7UtD6JBNJLaHUO/s8NinVhV3f5iaknvILsX7naB2y5Do33OS3oocNGGuwBhjGiyMXPlsIknR04t5hR2VdV+8hg=="],
+    "@storagehub-sdk/core": ["@storagehub-sdk/core@0.4.4", "", { "dependencies": { "@polkadot/types": "^16.4.7", "abitype": "^1.0.0", "ethers": "^6.15.0" }, "peerDependencies": { "viem": ">=2.38.3" } }, "sha512-3tvsp5ILx4r1JWzqef02EKKL+u9nZIrl+/PMpj4Ode17v+mDmYI2ME3On9fZ8/+dEIAXWgqGh8/EjkYdP9PAEQ=="],
 
-    "@storagehub-sdk/msp-client": ["@storagehub-sdk/msp-client@0.3.3", "", { "peerDependencies": { "@storagehub-sdk/core": ">=0.0.5", "viem": ">=2.38.3" } }, "sha512-6ogaQOcw+xxi6xuiZ1IFJAFk7AvPD4CxL8FW96OcpZJBxRM9uilO90YNnpESFn1uFwiHC8BOv0kI06ee1vkfwg=="],
+    "@storagehub-sdk/msp-client": ["@storagehub-sdk/msp-client@0.4.4", "", { "peerDependencies": { "@storagehub-sdk/core": ">=0.0.5", "viem": ">=2.38.3" } }, "sha512-7TLSQAhwJ+RFxU5SbknRw37Qkhts3u2DycdZyA7aUe6e+QyD917QNnlYcM/JJLZFFiqGwy+Nrk07xhKv1zKAZg=="],
 
     "@storagehub/api-augment": ["@storagehub/api-augment@0.2.11", "", { "dependencies": { "@polkadot/api": "^16.4.7", "@polkadot/api-base": "^16.4.7", "@polkadot/rpc-core": "^16.4.7", "@polkadot/typegen": "^16.4.7", "@polkadot/types": "^16.4.7", "@polkadot/types-codec": "^16.4.7", "@storagehub/types-bundle": "0.2.8", "tsx": "4.20.5", "typescript": "^5.9.2" } }, "sha512-acJ8LySaFAbQdfwl9+8ALxgKjeBTvniWXnMj7FVPTZEvgy8g7gK6anVT0ee1X60oq2osMmWzwASjcmWkHn4C5A=="],
 
