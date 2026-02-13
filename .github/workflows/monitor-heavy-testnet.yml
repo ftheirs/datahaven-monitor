@@ -12,10 +12,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: monitor-heavy-testnet
-  cancel-in-progress: false
-
 jobs:
   monitor_heavy_testnet:
     uses: ./.github/workflows/_monitor-heavy.yml

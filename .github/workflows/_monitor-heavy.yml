@@ -31,7 +31,7 @@ permissions:
 
 concurrency:
   group: monitor-heavy-${{ inputs.network }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   monitor_heavy:
@@ -271,4 +271,3 @@ jobs:
               exit 1
             fi
           fi
-
