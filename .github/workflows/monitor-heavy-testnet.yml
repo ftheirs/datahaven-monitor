@@ -2,8 +2,8 @@ name: Monitor Heavy – Testnet
 
 on:
   schedule:
-    # Run every 40 minutes
-    - cron: "*/40 * * * *"
+    # Run every 60 minutes
+    - cron: "*/60 * * * *"
   workflow_dispatch:
   push:
     branches:
@@ -11,6 +11,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: monitor-heavy-testnet
+  cancel-in-progress: false
 
 jobs:
   monitor_heavy_testnet:
@@ -25,4 +29,3 @@ jobs:
     secrets:
       ACCOUNT_PRIVATE_KEY: ${{ secrets.ACCOUNT_PRIVATE_KEY }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
