@@ -267,7 +267,7 @@ const HEAVY_CONFIG = {
 	// - Poll infrequently (every 2 minutes) to keep logs readable.
 	// - Give it a longer budget than readiness, as backend deletion propagation can be slower.
 	deleteAbsentPollIntervalMs: 2 * 60_000,
-	deleteAbsentPollTotalMs: 26 * 60_000, // 26 min
+	deleteAbsentPollTotalMs: 40 * 60_000, // 40 min
 } as const;
 
 type FileSpec = {
