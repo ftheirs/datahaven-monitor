@@ -71,8 +71,21 @@ export async function bucketCreateStage(ctx: MonitorContext): Promise<void> {
 	console.log("[bucket-create] Waiting for MSP backend to index bucket...");
 	await pollBackend(
 		async () => {
-			const buckets = await ctx.mspClient!.buckets.listBuckets();
-			return buckets.some((b) => b.bucketId === ctx.bucketId);
+			try {
+				const bucket = await ctx.mspClient!.buckets.getBucket(ctx.bucketId!);
+				return bucket.bucketId.toLowerCase() === ctx.bucketId!.toLowerCase();
+			} catch (e) {
+				const status =
+					typeof e === "object" && e !== null && "status" in e
+						? (e as { status?: number }).status
+						: undefined;
+				if (status === 404) return false;
+				const msg = e instanceof Error ? e.message : String(e);
+				if (msg.includes("404") || msg.toLowerCase().includes("not found")) {
+					return false;
+				}
+				throw e;
+			}
 		},
 		{ retries: 40, delayMs: 3000 },
 	);

@@ -630,11 +630,24 @@ async function runMonitorHeavy(): Promise<void> {
 
 		// Wait for backend indexing (bucket appears)
 		await pollBackend(async () => {
-			const buckets = await mspClient.buckets.listBuckets();
-			return buckets.some((b) => b.bucketId === bucketId);
+			try {
+				const bucket = await mspClient.buckets.getBucket(bucketId);
+				return bucket.bucketId.toLowerCase() === bucketId.toLowerCase();
+			} catch (e) {
+				const status =
+					typeof e === "object" && e !== null && "status" in e
+						? (e as { status?: number }).status
+						: undefined;
+				if (status === 404) return false;
+				const msg = e instanceof Error ? e.message : String(e);
+				if (msg.includes("404") || msg.toLowerCase().includes("not found")) {
+					return false;
+				}
+				throw e;
+			}
 		}, HEAVY_CONFIG.bucketReadyPoll);
 
-		// Some environments lag between listBuckets and allowing file operations.
+		// Some environments lag between bucket visibility and allowing file operations.
 		// Ensure the bucket is usable via getFiles before issuing uploads.
 		await pollBackend(async () => {
 			try {
@@ -1140,10 +1153,23 @@ async function runMonitorHeavy(): Promise<void> {
 		if (delBucketRcpt.status !== "success")
 			throw new Error("deleteBucket failed");
 
-		// Wait for backend to reflect removal from listing
+		// Wait for backend to reflect bucket deletion
 		await pollBackend(async () => {
-			const buckets = await mspClient.buckets.listBuckets();
-			return !buckets.some((b) => b.bucketId === bucketId);
+			try {
+				await mspClient.buckets.getBucket(bucketId);
+				return false; // still present
+			} catch (e) {
+				const status =
+					typeof e === "object" && e !== null && "status" in e
+						? (e as { status?: number }).status
+						: undefined;
+				if (status === 404) return true;
+				const msg = e instanceof Error ? e.message : String(e);
+				if (msg.includes("404") || msg.toLowerCase().includes("not found")) {
+					return true;
+				}
+				throw e;
+			}
 		}, HEAVY_CONFIG.bucketReadyPoll);
 		endPhasePassed();
 
