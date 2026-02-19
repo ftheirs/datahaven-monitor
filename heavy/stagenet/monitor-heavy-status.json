@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-02-19T22:10:52.626Z",
+  "timestamp": "2026-02-19T23:03:51.656Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Stagenet",
-  "overall": "failed",
+  "overall": "success",
   "summary": {
-    "durationMs": 252452,
+    "durationMs": 886993,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,26 +19,49 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 18024
+      "durationMs": 23922
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 27492
+      "durationMs": 26757
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 167065
+      "durationMs": 204586
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
-      "status": "failed",
-      "durationMs": 29702,
-      "error": "WebSocket is not connected\nFailed WS Request: {\"method\":\"state_queryStorageAt\",\"params\":[[\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a67c97ac64bd21eb650715bf1b0ef37c944abf9270eed6fd41df2ae115f065835b23ab02e4d8b3e96910d9d2c8fde7b81f9\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a67f2ff87d15a74b9ffbee1990bb36344a4652231f2703f0ae7fac88edf93a553b3a67fca7726df3d952d27fc9c7768f392\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a6708f21bc876fbcbedd72c47762e61acaec13a9f6dc0d6349ff0891e69c43b28f4553e2e6e50f0e2df8bcabc3fdb17b98b\"]]}"
+      "status": "passed",
+      "durationMs": 154123
+    },
+    {
+      "name": "storage-request-batch2",
+      "label": "Storage Req (Batch 2)",
+      "status": "passed",
+      "durationMs": 21879
+    },
+    {
+      "name": "upload-batch2",
+      "label": "Upload (Batch 2)",
+      "status": "passed",
+      "durationMs": 233193
+    },
+    {
+      "name": "file-delete-all10",
+      "label": "Delete All",
+      "status": "passed",
+      "durationMs": 183380
+    },
+    {
+      "name": "bucket-delete",
+      "label": "Bucket Delete",
+      "status": "passed",
+      "durationMs": 18937
     }
   ]
 }
