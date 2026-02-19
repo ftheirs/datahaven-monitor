@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-02-19T08:32:21.390Z",
+  "timestamp": "2026-02-19T09:24:28.276Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
   "overall": "failed",
   "summary": {
-    "durationMs": 2901514,
+    "durationMs": 2999299,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,26 +19,26 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 22469
+      "durationMs": 23192
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 27070
+      "durationMs": 27302
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 410415
+      "durationMs": 507353
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
       "status": "failed",
-      "durationMs": 2431384,
-      "error": "Timeout waiting for first 5 files to disappear from bucket listing (present 3/5)"
+      "durationMs": 2431311,
+      "error": "Timeout waiting for first 5 files to disappear from bucket listing (present 5/5)"
     }
   ]
 }
