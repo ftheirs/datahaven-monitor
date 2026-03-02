@@ -2,8 +2,8 @@ name: Monitor Heavy – Testnet
 
 on:
   schedule:
-    # Run every 60 minutes
-    - cron: "*/80 * * * *"
+    # Run every 40 minutes
+    - cron: "0/40 * * * *"
   workflow_dispatch:
   push:
     branches:
