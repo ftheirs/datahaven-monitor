@@ -200,6 +200,7 @@ async function main() {
 		bucketId,
 		finalFileKey.toHex(),
 		blob,
+		fingerprint.toHex() as `0x${string}`,
 		account.address,
 		LOCATION,
 	);

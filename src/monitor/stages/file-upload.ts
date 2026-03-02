@@ -16,8 +16,9 @@ import { sleep } from "../../util/helpers";
  */
 async function uploadWithRetry(
 	ctx: MonitorContext,
-	fileKey: string,
+	fileKey: `0x${string}`,
 	fileBlob: Blob,
+	fingerprint: `0x${string}`,
 	{
 		retries = 5,
 		delayMs = 10_000,
@@ -26,9 +27,10 @@ async function uploadWithRetry(
 	for (let i = 0; i < retries; i++) {
 		try {
 			return await ctx.mspClient!.files.uploadFile(
-				ctx.bucketId!,
+				ctx.bucketId! as `0x${string}`,
 				fileKey,
 				fileBlob,
+				fingerprint,
 				ctx.account.address,
 				ctx.fileLocation!,
 			);
@@ -121,10 +123,16 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
 
 	// Upload the file with retries
 	console.log("[file-upload] Uploading file to MSP backend...");
-	const uploadResponse = await uploadWithRetry(ctx, fileKeyHex, uploadBlob, {
-		retries: 5,
-		delayMs: 10_000,
-	});
+	const uploadResponse = await uploadWithRetry(
+		ctx,
+		fileKeyHex,
+		uploadBlob,
+		ctx.fingerprint as `0x${string}`,
+		{
+			retries: 5,
+			delayMs: 10_000,
+		},
+	);
 
 	// Verify upload response
 	if (uploadResponse.status !== "upload_successful") {
@@ -151,7 +159,7 @@ export async function fileUploadStage(ctx: MonitorContext): Promise<void> {
 	const mspReadyStart = Date.now();
 	await waitForMspFileReadyWithSnapshot(
 		ctx.mspClient!,
-		ctx.bucketId!,
+		ctx.bucketId! as `0x${string}`,
 		fileKeyHex as `0x${string}`,
 		{
 			label: "file-upload",

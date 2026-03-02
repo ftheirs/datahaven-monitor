@@ -193,6 +193,7 @@ export async function runFileUploadStress(
 			name: string;
 			location: string;
 			bytes: Uint8Array;
+			fingerprint?: `0x${string}`;
 			fileKey?: `0x${string}`;
 		};
 
@@ -247,12 +248,13 @@ export async function runFileUploadStress(
 
 				// Get fingerprint
 				const fingerprint = await fileManager.getFingerprint();
+				file.fingerprint = fingerprint.toHex() as `0x${string}`;
 
 				// Issue storage request ON-CHAIN (sequential to avoid nonce conflicts)
 				const storageReqTx = await storageHubClient.issueStorageRequest(
 					bucketId,
 					file.location,
-					fingerprint.toHex() as `0x${string}`,
+					file.fingerprint,
 					BigInt(file.bytes.length),
 					mspId,
 					peerId ? [peerId] : [],
@@ -337,7 +339,7 @@ export async function runFileUploadStress(
 
 			await Promise.all(
 				batch.map(async (file) => {
-					if (!file.fileKey) return;
+					if (!file.fileKey || !file.fingerprint) return;
 
 					try {
 						// Create fresh FileManager for upload
@@ -354,6 +356,7 @@ export async function runFileUploadStress(
 							bucketId,
 							file.fileKey,
 							freshBlob,
+							file.fingerprint,
 							account.address,
 							file.location,
 						);

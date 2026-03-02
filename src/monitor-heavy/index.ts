@@ -142,6 +142,7 @@ async function uploadWithRetry(opts: {
 	bucketId: `0x${string}`;
 	fileKey: `0x${string}`;
 	blob: Blob;
+	fingerprint: `0x${string}`;
 	owner: `0x${string}`;
 	location: string;
 	reAuth: () => Promise<void>;
@@ -171,6 +172,7 @@ async function uploadWithRetry(opts: {
 				opts.bucketId,
 				opts.fileKey,
 				opts.blob,
+				opts.fingerprint,
 				opts.owner,
 				opts.location,
 			);
@@ -827,6 +829,8 @@ async function runMonitorHeavy(): Promise<void> {
 					HEAVY_CONFIG.uploadConcurrency,
 					async (f, idx) => {
 						if (!f.fileKeyHex) throw new Error("Missing fileKey for upload");
+						if (!f.fingerprintHex)
+							throw new Error("Missing fingerprint for upload");
 						const fk = f.fileKeyHex;
 						const fkKey = fk.toLowerCase();
 						status.set(fkKey, "uploading");
@@ -863,6 +867,7 @@ async function runMonitorHeavy(): Promise<void> {
 							bucketId,
 							fileKey: f.fileKeyHex,
 							blob,
+							fingerprint: f.fingerprintHex,
 							owner: account.address,
 							location: f.location,
 							reAuth,
