@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-03-03T13:40:10.299Z",
+  "timestamp": "2026-03-03T14:46:36.129Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
-  "overall": "success",
+  "overall": "failed",
   "summary": {
-    "durationMs": 1351281,
+    "durationMs": 1208818,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,49 +19,38 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 18939
+      "durationMs": 18852
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 27827
+      "durationMs": 28017
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 351884
+      "durationMs": 535652
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
       "status": "passed",
-      "durationMs": 148037
+      "durationMs": 169092
     },
     {
       "name": "storage-request-batch2",
       "label": "Storage Req (Batch 2)",
       "status": "passed",
-      "durationMs": 23237
+      "durationMs": 22366
     },
     {
       "name": "upload-batch2",
       "label": "Upload (Batch 2)",
-      "status": "passed",
-      "durationMs": 561841
-    },
-    {
-      "name": "file-delete-all10",
-      "label": "Delete All",
-      "status": "passed",
-      "durationMs": 181641
-    },
-    {
-      "name": "bucket-delete",
-      "label": "Bucket Delete",
-      "status": "passed",
-      "durationMs": 17633
+      "status": "failed",
+      "durationMs": 414626,
+      "error": "WebSocket is not connected\nFailed WS Request: {\"method\":\"state_queryStorageAt\",\"params\":[[\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a67063f32cf6be06708a4fbeb35a069b5cc49d8a7b084647055667cfbf2ef022cf0015a52f17855c39727f11b76c1070667\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a6789265a8daadf675d252b0f1eaca5ab658708efdd20fb887a9a3e0a681d3e77989d7ec9805e89e6837e99bd90b85b8b4a\",\"0x84025e2a23c18e34a73b7d6cd9360461f250e204a71d173cc77a5268912c0a67ac09befd94885910d7dd3a18f6ff1e77ff60f8cdec405a7eefab1c032f2510016a10fdef3ca5bd705b674d0ca6ddb800\"]]}"
     }
   ]
 }
