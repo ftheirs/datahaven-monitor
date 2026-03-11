@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-03-11T13:47:10.391Z",
+  "timestamp": "2026-03-11T14:43:06.997Z",
   "monitor": "monitor-heavy",
   "network": "DataHaven Testnet",
-  "overall": "success",
+  "overall": "failed",
   "summary": {
-    "durationMs": 1535309,
+    "durationMs": 769959,
     "initialFileCount": 10,
     "deleteFirstCount": 5,
     "secondBatchCount": 5,
@@ -19,49 +19,38 @@
       "name": "bucket-create",
       "label": "Bucket Create",
       "status": "passed",
-      "durationMs": 22255
+      "durationMs": 16964
     },
     {
       "name": "storage-request-batch1",
       "label": "Storage Req (Batch 1)",
       "status": "passed",
-      "durationMs": 22915
+      "durationMs": 22129
     },
     {
       "name": "upload-batch1",
       "label": "Upload (Batch 1)",
       "status": "passed",
-      "durationMs": 507489
+      "durationMs": 507238
     },
     {
       "name": "file-delete-first5",
       "label": "Delete Half",
       "status": "passed",
-      "durationMs": 148825
+      "durationMs": 148730
     },
     {
       "name": "storage-request-batch2",
       "label": "Storage Req (Batch 2)",
       "status": "passed",
-      "durationMs": 23140
+      "durationMs": 23439
     },
     {
       "name": "upload-batch2",
       "label": "Upload (Batch 2)",
-      "status": "passed",
-      "durationMs": 588571
-    },
-    {
-      "name": "file-delete-all10",
-      "label": "Delete All",
-      "status": "passed",
-      "durationMs": 180987
-    },
-    {
-      "name": "bucket-delete",
-      "label": "Bucket Delete",
-      "status": "passed",
-      "durationMs": 20886
+      "status": "failed",
+      "durationMs": 31238,
+      "error": "HTTP 503 for PUT https://deo-dh-backend.testnet.datahaven-infra.network/buckets/0x0ac8cca7825e6c56a55dccaf4f7f4d5454f14c7170647c94dcf42e382a7c509e/upload/0xcc15c14c47a16f762760ec896380f37f84653cffe2d5431d9696080efa654cbb"
     }
   ]
 }
